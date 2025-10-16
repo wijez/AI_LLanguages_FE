@@ -132,7 +132,7 @@ export default function AppAdmin() {
         <Route path="languages" element={
           <ResourceTable
             title="Languages"
-            resource="/languages/languages/"
+            resource="/languages/"
             columns={columns.languages}
             form={[
               { name: 'name', label: 'Name' },
@@ -145,7 +145,7 @@ export default function AppAdmin() {
         <Route path="topics" element={
           <ResourceTable
             title="Topics"
-            resource="/languages/topics/"
+            resource="/topics/"
             columns={columns.topics}
             form={[
               { name: 'language', label: 'Language ID' },

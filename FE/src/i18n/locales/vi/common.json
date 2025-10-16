@@ -1,0 +1,7 @@
+{
+  "lang": {
+    "display": "{{name}}",
+    "vi": "Tiếng Việt", "en": "Tiếng Anh", "zh": "Tiếng Hoa", "ja": "Tiếng Nhật", "ko": "Tiếng Hàn"
+  },
+  "cta": { "start": "BẮT ĐẦU", "login": "TÔI ĐÃ CÓ TÀI KHOẢN" }
+}

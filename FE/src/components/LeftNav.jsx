@@ -5,6 +5,7 @@ import {
     User, MoreHorizontal 
 } from 'lucide-react'
 import { useLocation, Link } from 'react-router-dom'
+import Elephant from '../assets/elephant.svg?url';
 
 export default function LeftNav() {
   const location = useLocation()
@@ -24,8 +25,8 @@ export default function LeftNav() {
     <div className="w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto sticky top-0">
       <div className="mb-8">
         <Link to="/learn">
-          <h1 className="text-3xl font-bold text-green-500 cursor-pointer hover:text-green-600 transition-colors">
-            AI LL
+          <h1 className="flex items-center gap-3 text-3xl font-bold text-green-500 cursor-pointer hover:text-green-600 transition-colors">
+              <img src={Elephant} alt="Elephant" className="w-24 h-24" /> Aivory
           </h1>
         </Link>
       </div>

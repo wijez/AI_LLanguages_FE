@@ -9,6 +9,8 @@ export const RightNav           = L('./components/RightNav.jsx');
 export const MainLayout         = L('./layouts/MainLayout.jsx');
 export const MobileBottomNav    = L('./components/Bars/MobileBottomNav.jsx');
 
+// Dropdowns
+export const  LanguageDropdown  = L('./components/Dropdowns/LanguageDropdown.jsx');
 // Contents
 export const Practice       = L('./components/Contents/Practice.jsx');
 export const Learn          = L('./components/Contents/Learn.jsx');
@@ -22,6 +24,8 @@ export const Exercise       = L('./components/Contents/Exercise.jsx');
 export const Shop           = L('./components/Contents/Shop.jsx');
 
 // Pages
+
+export const LandingPage     = L('./pages/LandingPage.jsx');
 export const TaskPage       = L('./pages/TaskPage.jsx');
 export const PracticePage   = L('./pages/PracticePage.jsx');
 export const LearnPage      = L('./pages/LearnPage.jsx');
@@ -29,5 +33,7 @@ export const RankPage       = L('./pages/RankPage.jsx');
 export const InfoPage       = L('./pages/InfoPage.jsx');
 export const MorePage       = L('./pages/MorePage.jsx');
 export const SpeechPage     = L('./pages/SpeechPage.jsx');
-export const ExercisePage   = L('./pages/ExercisePage.jsx');
 export const ShopPage       = L('./pages/ShopPage.jsx');
+export const SignupPage     = L('./pages/SignUpPage.jsx');
+
+

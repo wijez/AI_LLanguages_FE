@@ -1,0 +1,15 @@
+{
+  "title": "I want to learn...",
+  "learners": "learners",
+  "l10n": {
+    "en": "English",
+    "zh": "Chinese",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "it": "Italian",
+    "vi": "Vietnamese"
+  }
+}

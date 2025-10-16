@@ -1,0 +1,7 @@
+{
+  "lang": {
+    "display": "{{name}}",
+    "vi": "Vietnamese", "en": "English", "zh": "Chinese", "ja": "Japanese", "ko": "Korean"
+  },
+  "cta": { "start": "GET STARTED", "login": "I ALREADY HAVE AN ACCOUNT" }
+}

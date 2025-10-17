@@ -7,9 +7,9 @@ export default function MobileBottomNav() {
   
   const navItems = [
     { icon: Home, label: 'HỌC', path: '/learn' },
-    { icon: Volume2, label: 'PHÁT ÂM', path: '/practice' },
-    { icon: Dumbbell, label: 'LUYỆN TẬP', path: '/exercise' },
-    { icon: Shield, label: 'BẢNG', path: '/leaderboard' },
+    { icon: Volume2, label: 'PHÁT ÂM', path: '/speech' },
+    { icon: Dumbbell, label: 'LUYỆN TẬP', path: '/practice' },
+    { icon: Shield, label: 'BẢNG', path: '/rank' },
     { icon: User, label: 'HỒ SƠ', path: '/profile' },
   ]
 

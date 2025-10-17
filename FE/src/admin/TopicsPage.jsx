@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert } from '@mui/material';
 import LibraryBooksRounded from '@mui/icons-material/LibraryBooksRounded';
 import MilitaryTechRounded from '@mui/icons-material/MilitaryTechRounded';
-import { api } from '../api/client';
+import { api } from '../api/api';
 import ResourceTable from './ResourceTable';
 
 export default function TopicsPage({ columns }) {

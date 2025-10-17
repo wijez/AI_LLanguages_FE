@@ -10,6 +10,7 @@ import {
 import AppAdmin from './admin/AppAdmin.jsx'
 import  AppProviders  from './AppProviders.jsx'
 import SignupPage from './pages/SignUpPage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path='/more' element={<MorePage />} />
         <Route path="/admin/*" element={<AppAdmin/>} />
         <Route path="/register/" element={<SignupPage/>} />
+        <Route path="/login/" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>
     </AppProviders>

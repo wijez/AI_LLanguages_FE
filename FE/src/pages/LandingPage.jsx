@@ -3,56 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import LanguageDropdown from '../components/Dropdowns/LanguageDropdown';
 import Elephant from '../assets/elephant.svg?url';
-
-function Logo() {
-  return (
-    <div className="flex items-center gap-2">
-      <svg width="28" height="28" viewBox="0 0 24 24" className="text-[#58cc02]">
-        <path fill="currentColor" d="M12 2c3 0 6 2 6 6v2c0 2 1 3 2 4-2 1-4 1-6-1-.6.7-1.5 1-2 1s-1.4-.3-2-1c-2 2-4 2-6 1 1-1 2-2 2-4V8c0-4 3-6 6-6Z" />
-        <circle cx="9.5" cy="9.5" r="1.2" fill="#222" />
-        <circle cx="14.5" cy="9.5" r="1.2" fill="#222" />
-      </svg>
-      <span className="font-extrabold text-2xl tracking-tight text-[#58cc02]">duolingo</span>
-    </div>
-  );
-}
-
-function HeroArt() {
-  return (
-    <svg viewBox="0 0 320 260" className="w-full h-auto">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#7fe22e" />
-          <stop offset="100%" stopColor="#58cc02" />
-        </linearGradient>
-      </defs>
-      <circle cx="190" cy="120" r="60" fill="url(#g)" />
-      <circle cx="170" cy="110" r="8" fill="#fff" />
-      <circle cx="210" cy="110" r="8" fill="#fff" />
-      <circle cx="170" cy="110" r="3" fill="#222" />
-      <circle cx="210" cy="110" r="3" fill="#222" />
-      <ellipse cx="190" cy="146" rx="20" ry="10" fill="#ffa94d" />
-      <g fill="#ffd43b">
-        <circle cx="90" cy="170" r="14" />
-        <circle cx="120" cy="190" r="12" />
-        <circle cx="150" cy="170" r="10" />
-        <rect x="82" y="182" width="120" height="16" rx="8" fill="#e9ecef" />
-      </g>
-      <g transform="translate(40,40) rotate(-18)">
-        <circle cx="20" cy="30" r="14" fill="#74c0fc" />
-        <rect x="12" y="42" width="16" height="20" rx="4" fill="#74c0fc" />
-      </g>
-      <g transform="translate(60,8) rotate(14)">
-        <circle cx="20" cy="30" r="14" fill="#f06595" />
-        <rect x="12" y="42" width="16" height="20" rx="4" fill="#f06595" />
-      </g>
-      <g transform="translate(240,40) rotate(10)">
-        <circle cx="20" cy="30" r="14" fill="#4dabf7" />
-        <rect x="12" y="42" width="16" height="20" rx="4" fill="#4dabf7" />
-      </g>
-    </svg>
-  );
-}
+import FullElephant from '../assets/fullelephant.png?url';
 
 function LangChip({ flag, label, active }) {
   return (
@@ -88,7 +39,7 @@ export default function LandingPage() {
         <div className="max-w-[1200px] mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
           {/* left art */}
           <div className="order-2 md:order-1 md:pl-6">
-            <HeroArt />
+             <img src={FullElephant} alt="FullElephant" />;
           </div>
 
           {/* right text + CTA */}

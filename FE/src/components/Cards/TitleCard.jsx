@@ -1,17 +1,12 @@
 import React from 'react';
 import clsx from 'clsx';
+import { api } from '../../api/api';
 
-/**
- * TitleCard (floating)
- * props:
- *  - section, title, onBack, onHelp, helpText
- *  - floating    : boolean  => bật sticky trong scroll container (main)
- *  - offset      : string   => lớp Tailwind vị trí sticky (vd: "top-2 md:top-3")
- *  - center      : boolean  => căn giữa theo vùng Main
- *  - cta         : ReactNode => phần CTA render bên dưới card (giữa)
- *  - className   : string   => thêm class ngoài
- */
 export default function TitleCard({
+  topic,               
+  topicId,
+  slug,
+  sectionPrefix,
   section = '',
   title = '',
   onBack,
@@ -23,59 +18,82 @@ export default function TitleCard({
   cta,
   className
 }) {
+  const [data, setData] = React.useState(topic || null);
+  const [loading, setLoading] = React.useState(!!(!topic && (topicId || slug)));
+  const [error, setError] = React.useState('');
+
+  // đồng bộ khi prop topic thay đổi
+  React.useEffect(() => {
+    if (topic) {
+      setData(topic);
+      setLoading(false);
+      setError('');
+    }
+  }, [topic]);
+
+  // nếu không có topic, mới cần fetch theo id/slug
+  React.useEffect(() => {
+    if (topic || (!topicId && !slug)) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true); setError('');
+      try {
+        let t = null;
+        if (topicId) {
+          t = await api.Topics.get(topicId);
+        } else if (slug) {
+          const res = await api.Topics.list({ slug });
+          const items = Array.isArray(res?.results) ? res.results : (Array.isArray(res) ? res : []);
+          t = items[0] || null;
+        }
+        if (!cancelled) setData(t);
+      } catch (e) {
+        if (!cancelled) setError(e?.message || 'Failed to load topic');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [topic, topicId, slug]);
+
+  const computedTitle = data?.title ?? title;
+  const computedSection = data
+    ? (sectionPrefix ? `${sectionPrefix}, CỬA ${data?.order ?? '?'}` : `CỬA ${data?.order ?? '?'}`)
+    : section;
+
   return (
-    <div
-      className={clsx(
-        // wrapper để sticky + căn giữa
-        floating && 'sticky z-50',
-        floating && offset,
-        center && 'mx-auto',
-        'w-full max-w-[1100px]'
-      )}
-    >
-      <div
-        className={clsx(
-          'w-full rounded-3xl',
-          'bg-[linear-gradient(135deg,#1cb0f6_0%,#0ea5e9_100%)]',
-          'text-white p-4 md:p-6',
-          'shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.08)]',
-          className
-        )}
-      >
+    <div className={clsx(floating && 'sticky z-50', floating && offset, center && 'mx-auto', 'w-full max-w-[1100px]')}>
+      <div className={clsx(
+        'w-full rounded-3xl',
+        'bg-[linear-gradient(135deg,#1cb0f6_0%,#0ea5e9_100%)]',
+        'text-white p-4 md:p-6',
+        'shadow-[inset_0_-2px_0_0_rgba(0,0,0,0.08)]',
+        className
+      )}>
         <div className="flex items-start justify-between gap-3">
-          {/* Left: back + section + title */}
           <div className="min-w-0">
-            <button
-              type="button"
-              onClick={onBack}
-              className="inline-flex items-center gap-2 text-white/90 hover:text-white focus:outline-none"
-            >
+            <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-white/90 hover:text-white focus:outline-none">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="shrink-0">
                 <path d="M14 6L8 12L14 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span className="text-xs md:text-sm font-extrabold tracking-wide uppercase">
-                {section}
+                {loading && !computedSection ? '...' : (computedSection || '—')}
               </span>
             </button>
 
-            {/* fix kích thước title: lớn dần theo breakpoints */}
             <h1 className="mt-2 text-xl md:text-2xl lg:text-2xl font-extrabold leading-snug">
-              {title}
+              {loading && !computedTitle ? 'Đang tải...' : (computedTitle || '—')}
             </h1>
+
+            {error && <div className="mt-1 text-xs font-medium text-rose-100/90">Lỗi tải topic: {error}</div>}
           </div>
 
-          {/* Right: help button */}
           <button
             type="button"
             onClick={onHelp}
-            className={clsx(
-              'relative inline-flex items-center gap-2',
-              'rounded-2xl px-4 py-2 md:px-5 md:py-2.5',
-              'bg-sky-400/25 ring-2 ring-sky-700/50',
-              'shadow-[0_3px_0_0_rgba(0,0,0,0.12)]',
-              'hover:bg-sky-400/35 active:translate-y-[1px]',
-              'focus:outline-none focus:ring-2 focus:ring-white/70'
-            )}
+            className="relative inline-flex items-center gap-2 rounded-2xl px-4 py-2 md:px-5 md:py-2.5
+                       bg-sky-400/25 ring-2 ring-sky-700/50 shadow-[0_3px_0_0_rgba(0,0,0,0.12)]
+                       hover:bg-sky-400/35 active:translate-y-[1px] focus:outline-none focus:ring-2 focus:ring-white/70"
           >
             <span className="grid place-items-center rounded-md bg-white/90 text-sky-600 p-1">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -93,12 +111,7 @@ export default function TitleCard({
         </div>
       </div>
 
-      {/* CTA ở giữa, nằm dưới card (tuỳ chọn) */}
-      {cta && (
-        <div className="mt-2 flex justify-center">
-          {cta}
-        </div>
-      )}
+      {cta && <div className="mt-2 flex justify-center">{cta}</div>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
+// src/admin/AppAdmin.jsx
 import * as React from 'react';
-import { Outlet, Link, Routes, Route, Navigate } from 'react-router-dom';
+import { Outlet, Link, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import {
   Box, CssBaseline, AppBar, Toolbar, IconButton, Typography,
   Drawer, List, ListItemButton, ListItemText, ListSubheader, Stack, Avatar, useMediaQuery
@@ -13,13 +14,14 @@ import CategoryRounded from '@mui/icons-material/CategoryRounded';
 
 import Dashboard from './Dashboard';
 import ResourceTable from './ResourceTable';
+import TopicDetail from './TopicDetail';
 
 const drawerWidth = 240;
 
 const Shell = () => {
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('md'));
-  const [open, setOpen] = React.useState(mdUp);     // desktop mở sẵn, mobile đóng
+  const [open, setOpen] = React.useState(mdUp);
 
   React.useEffect(() => setOpen(mdUp), [mdUp]);
 
@@ -30,12 +32,29 @@ const Shell = () => {
         subheader={<ListSubheader>Dashboard</ListSubheader>}
         sx={{ '& a': { color: 'inherit', textDecoration: 'none' } }}
       >
-        <Link to="/admin"><ListItemButton><DashboardCustomizeRounded/><ListItemText sx={{ ml:1 }} primary="Default" /></ListItemButton></Link>
+        <Link to="/admin">
+          <ListItemButton>
+            <DashboardCustomizeRounded/>
+            <ListItemText sx={{ ml:1 }} primary="Default" />
+          </ListItemButton>
+        </Link>
       </List>
       <List subheader={<ListSubheader>Models</ListSubheader>}>
-        <Link to="/admin/users"><ListItemButton><PeopleRounded/><ListItemText sx={{ ml:1 }} primary="Users" /></ListItemButton></Link>
-        <Link to="/admin/languages"><ListItemButton><TranslateRounded/><ListItemText sx={{ ml:1 }} primary="Languages" /></ListItemButton></Link>
-        <Link to="/admin/topics"><ListItemButton><CategoryRounded/><ListItemText sx={{ ml:1 }} primary="Topics" /></ListItemButton></Link>
+        <Link to="/admin/users">
+          <ListItemButton>
+            <PeopleRounded/><ListItemText sx={{ ml:1 }} primary="Users" />
+          </ListItemButton>
+        </Link>
+        <Link to="/admin/languages">
+          <ListItemButton>
+            <TranslateRounded/><ListItemText sx={{ ml:1 }} primary="Languages" />
+          </ListItemButton>
+        </Link>
+        <Link to="/admin/topics">
+          <ListItemButton>
+            <CategoryRounded/><ListItemText sx={{ ml:1 }} primary="Topics" />
+          </ListItemButton>
+        </Link>
       </List>
     </>
   );
@@ -56,12 +75,11 @@ const Shell = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Drawer mobile: temporary; desktop: permanent */}
       <Drawer
         variant={mdUp ? 'permanent' : 'temporary'}
         open={open}
         onClose={() => setOpen(false)}
-        ModalProps={{ keepMounted: true }}  // tối ưu mobile
+        ModalProps={{ keepMounted: true }}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -89,6 +107,26 @@ const Shell = () => {
   );
 };
 
+function TopicsTableWrapper({ columns }) {
+  const navigate = useNavigate();
+  return (
+    <ResourceTable
+      title="Topics"
+      resource="/topics/"
+      columns={columns}
+      form={[
+        { name: 'language', label: 'Language ID', required: true },
+        { name: 'slug', label: 'Slug', required: true },
+        { name: 'title', label: 'Title', required: true },
+        { name: 'description', label: 'Description' },
+        { name: 'order', label: 'Order', type: 'number', required: true },
+        { name: 'golden', label: 'Golden (true/false)' }
+      ]}
+      onViewRow={(row) => navigate(`/admin/topics/${row.id}`)} // ✅ nút View
+    />
+  );
+}
+
 export default function AppAdmin() {
   const columns = {
     users: [
@@ -99,10 +137,10 @@ export default function AppAdmin() {
     ],
     languages: [
       { field: 'id', headerName: 'ID', width: 70 },
-      { field: 'name', headerName: 'Name', width: 160 },
-      { field: 'abbreviation', headerName: 'Abbr', width: 100 },
-      { field: 'native_name', headerName: 'Native', width: 160 },
-      { field: 'direction', headerName: 'Dir', width: 80 },
+      { field: 'name', headerName: 'Name', width: 180 },
+      { field: 'abbreviation', headerName: 'Abbr', width: 120 },
+      { field: 'native_name', headerName: 'Native', width: 200 },
+      { field: 'direction', headerName: 'Dir', width: 90 },
     ],
     topics: [
       { field: 'id', headerName: 'ID', width: 70 },
@@ -117,46 +155,38 @@ export default function AppAdmin() {
     <Routes>
       <Route element={<Shell/>}>
         <Route index element={<Dashboard/>} />
+
         <Route path="users" element={
           <ResourceTable
             title="Users"
             resource="/users/"
             columns={columns.users}
             form={[
-              { name: 'username', label: 'Username' },
-              { name: 'email', label: 'Email', type: 'email' },
-              { name: 'password', label: 'Password', type: 'password' }
+              { name: 'username', label: 'Username', required: true },
+              { name: 'email', label: 'Email', type: 'email', required: true },
+              { name: 'password', label: 'Password', type: 'password', required: true }
             ]}
           />
         }/>
+
         <Route path="languages" element={
           <ResourceTable
             title="Languages"
             resource="/languages/"
             columns={columns.languages}
             form={[
-              { name: 'name', label: 'Name' },
-              { name: 'abbreviation', label: 'Abbreviation' },
+              { name: 'name', label: 'Name', required: true },
+              { name: 'abbreviation', label: 'Abbreviation', helperText: 'e.g. en, vi, ja', required: true },
               { name: 'native_name', label: 'Native name' },
-              { name: 'direction', label: 'Direction' }
+              { name: 'direction', label: 'Direction', required: true },
             ]}
           />
         }/>
-        <Route path="topics" element={
-          <ResourceTable
-            title="Topics"
-            resource="/topics/"
-            columns={columns.topics}
-            form={[
-              { name: 'language', label: 'Language ID' },
-              { name: 'slug', label: 'Slug' },
-              { name: 'title', label: 'Title' },
-              { name: 'description', label: 'Description' },
-              { name: 'order', label: 'Order', type: 'number' },
-              { name: 'golden', label: 'Golden (true/false)' }
-            ]}
-          />
-        }/>
+
+        {/* Topics list + Topic detail */}
+        <Route path="topics" element={<TopicsTableWrapper columns={columns.topics} />} />
+        <Route path="topics/:id" element={<TopicDetail />} />
+
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>

@@ -5,9 +5,14 @@ import StatsBar from './Bars/StatsBar'
 import Links from './Footers/Links'
 
 export default function RightNav() {
+  const learn =
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('learn') || '').split('-')[0] || undefined
+      : undefined
+
   return (
     <div className="w-full h-screen overflow-y-auto bg-white border-l border-gray-200 p-4 lg:p-6 space-y-4 lg:space-y-6 sticky top-0">
-      <StatsBar />
+      <StatsBar languageCode={learn} className="mb-2" />
       <TournamentCard />
       <DailyQuestCard />
       <Links />

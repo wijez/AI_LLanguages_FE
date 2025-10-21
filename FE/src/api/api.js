@@ -8,6 +8,9 @@ const BASE_URL =
     : 'http://127.0.0.1:8000/api');
 
 const TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT || 20000);
+const REFRESH_URL =
+  (import.meta.env && import.meta.env.VITE_REFRESH_URL)
+    || 'http://127.0.0.1:8000/api/users/token/refresh/';
 
 // Bật log khi chạy dev, hoặc VITE_DEBUG_API=1, hoặc localStorage.debug_api=1
 const DEBUG =
@@ -32,7 +35,6 @@ instance.interceptors.request.use((cfg) => {
   if (lng) cfg.headers['Accept-Language'] = lng;
 
   if (DEBUG) {
-    // log gọn gàng
     const method = (cfg.method || 'get').toUpperCase();
     // eslint-disable-next-line no-console
     console.groupCollapsed(
@@ -52,7 +54,32 @@ instance.interceptors.request.use((cfg) => {
   return cfg;
 });
 
-/** ====== Response Interceptor (log lỗi/ok) ====== */
+/** ====== Refresh Token Helper ====== */
+let refreshing = null;
+async function refreshAccessToken() {
+  if (refreshing) return refreshing;
+
+  const refresh = typeof window !== 'undefined' ? localStorage.getItem('refresh') : null;
+  if (!refresh) throw new Error('NO_REFRESH_TOKEN');
+
+  refreshing = axios
+    .post(REFRESH_URL, { refresh })
+    .then(({ data }) => {
+      const token = data?.access || data?.access_token;
+      if (!token) throw new Error('NO_ACCESS_IN_REFRESH_RESPONSE');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access', token); // ✅ đảm bảo đồng bộ key
+      }
+      return token;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+
+  return refreshing;
+}
+
+/** ====== Response Interceptor (log + auto refresh 401) ====== */
 instance.interceptors.response.use(
   (res) => {
     if (DEBUG) {
@@ -69,54 +96,53 @@ instance.interceptors.response.use(
     return res;
   },
   async (err) => {
+    const { config, response } = err || {};
+    const status = response?.status;
+    const reqUrl = response?.config?.url || config?.url || '';
+
     if (DEBUG) {
       // eslint-disable-next-line no-console
       console.group('%c[API ERROR]', 'color:#ef4444;font-weight:700');
       // eslint-disable-next-line no-console
       console.error(err);
-      const resp = err?.response;
-      if (resp) {
+      if (response) {
         // eslint-disable-next-line no-console
-        console.log('Status :', resp.status);
+        console.log('Status :', status);
         // eslint-disable-next-line no-console
-        console.log('URL    :', resp.config?.url);
+        console.log('URL    :', reqUrl);
         // eslint-disable-next-line no-console
-        console.log('Params :', resp.config?.params);
+        console.log('Params :', response.config?.params);
         // eslint-disable-next-line no-console
-        console.log('Data   :', resp.data);
+        console.log('Data   :', response.data);
       }
       // eslint-disable-next-line no-console
       console.groupEnd();
     }
+
+    // Tránh lặp khi chính call refresh bị 401
+    const isRefreshCall = (reqUrl || '').includes('/users/token/refresh/');
+
+    // Auto refresh 1 lần khi 401 (trừ refresh endpoint)
+    if (status === 401 && !config?.__isRetry && !isRefreshCall) {
+      try {
+        const newAccess = await refreshAccessToken();
+        const retryCfg = { ...config, __isRetry: true };
+        retryCfg.headers = { ...(retryCfg.headers || {}), Authorization: `Bearer ${newAccess}` };
+        return instance(retryCfg);
+      } catch {
+        // Refresh fail → xoá token & chuyển login
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access');
+          localStorage.removeItem('refresh');
+          const next = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = `/login?next=${next}`;
+        }
+      }
+    }
+
     throw err;
   }
 );
-
-/** ====== (Tuỳ chọn) Refresh token nếu cần ====== */
-// let refreshing = null;
-// instance.interceptors.response.use(
-//   (res) => res,
-//   async (err) => {
-//     const { config, response } = err || {};
-//     if (response?.status === 401 && !config.__isRetry) {
-//       if (!refreshing) {
-//         const refresh = localStorage.getItem('refresh');
-//         refreshing = axios
-//           .post(`${BASE_URL}/auth/jwt/refresh/`, { refresh })
-//           .then(({ data }) => {
-//             localStorage.setItem('access', data.access);
-//             return data.access;
-//           })
-//           .finally(() => (refreshing = null));
-//       }
-//       const token = await refreshing;
-//       config.headers.Authorization = `Bearer ${token}`;
-//       config.__isRetry = true;
-//       return instance(config);
-//     }
-//     throw err;
-//   }
-// );
 
 /** ================== HELPERS ================== */
 const ensureSlash = (s) => (s.endsWith('/') ? s : `${s}/`);
@@ -186,10 +212,8 @@ function scope(prefix) {
 
 /** ====== Resources theo Django DefaultRouter====== */
 
-
 // User
 const Resources = {
-  
   Users:              crud('/users/'),
   AccountSettings:    crud('/settings/'),
   SwitchAccount:      crud('/switchaccount/'),
@@ -223,7 +247,6 @@ const Resources = {
   LeaderboardEntries: crud('/leaderboard-entries/'),
 };
 
-
 /** ====== Các app include riêng trong urls.py ====== */
 // path("api/users/", include("users.urls")),
 const UsersApp  = scope('/users/');
@@ -234,7 +257,6 @@ const Pron      = scope('/pron/');
 // path("api/", include("speech.urls"))  -> gắn thẳng /api/
 const Speech    = scope('/');
 
-/** ====== Tools khác ====== */
 // /api/export/chat_training.jsonl
 async function exportChatTraining() {
   const url = '/export/chat_training.jsonl';
@@ -242,16 +264,37 @@ async function exportChatTraining() {
   return res.data; // Blob
 }
 
+// Bổ sung sub-route tuỳ biến
 Resources.Skills = {
   ...Resources.Skills,
   lessons: (skillId, params, opts) =>
     getCached(`/skills/${skillId}/lessons/`, { params }, opts).then(unwrap),
 };
 
+Resources.Topics = {
+  ...Resources.Topics,
+
+  // GET /api/topics/by-language/?language_abbr=zh&language_id=3&page_size=200 ...
+  byLanguage: (params = {}, opts) =>
+    getCached('/topics/by-language/', { params }, opts).then(unwrap),
+};
+
+Resources.Enrollments = {
+  ...Resources.Enrollments,
+
+  me: (params = {}, opts) =>
+    getCached('/enrollments/me/', { params }, opts).then(unwrap),
+
+  // POST /api/enrollments/ {abbreviation:'zh', ...}  → tạo enrollment bằng abbr
+  createByAbbr: (abbr, payload = {}, cfg) =>
+    instance
+      .post('/enrollments/', { abbreviation: abbr, ...payload }, cfg)
+      .then(unwrap)
+      .finally(invalidateAll),
+};
 /** ====== Export API ====== */
 export const api = {
   instance,
-  ...Resources,
   baseURL: BASE_URL,
 
   // gọi tự do
@@ -270,12 +313,12 @@ export const api = {
   Pron,
   Speech,
 
-  
   // tools
   exportChatTraining,
 
   // tiện ích
   invalidateAll,
+  refreshToken: refreshAccessToken,
 };
 
 export default api;

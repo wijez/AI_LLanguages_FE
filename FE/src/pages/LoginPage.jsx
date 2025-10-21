@@ -1,30 +1,20 @@
 import React, { useState } from "react";
+import { api } from "../api/api"; // ← dùng api.js
 
 /**
  * LoginPage – Duolingo-style login screen
  *
- * Props (all optional):
- *  - apiLogin: string – DRF endpoint that returns { tokens: { access, refresh }, ... }
- *  - onSuccess: (payload) => void – callback when login succeeds
- *  - onRedirect: string – redirect path after success (used if onSuccess not provided)
+ * Props (tùy chọn):
+ *  - onSuccess: (payload) => void – callback khi login thành công
+ *  - onRedirect: string – đường dẫn redirect sau khi login (nếu không truyền onSuccess)
  *  - logo: ReactNode – custom logo element
- *
- * Backend expectation (adjust if your payload differs):
- *  POST { apiLogin }
- *  Body: { "username": string, "password": string }
- *  Response example:
- *  {
- *    "message": "Login successful",
- *    "tokens": { "refresh": "...", "access": "..." }
- *  }
  */
 export default function LoginPage({
-  apiLogin = "http://127.0.0.1:8000/api/users/login/",
   onSuccess,
   onRedirect = "/",
   logo,
 }) {
-  const [identifier, setIdentifier] = useState(""); // email or username
+  const [identifier, setIdentifier] = useState(""); // email hoặc username
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,31 +25,40 @@ export default function LoginPage({
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
+
     setLoading(true);
     setError("");
+
     try {
-      const res = await fetch(apiLogin, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: identifier.trim(), password }),
-        credentials: "include", // if your API sets cookies
+      const data = await api.UsersApp.post("login/", {
+        username: identifier.trim(),
+        password,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = data?.detail || data?.message || "Không thể đăng nhập. Vui lòng kiểm tra thông tin.";
-        throw new Error(msg);
+
+      const access = data?.tokens?.access ?? data?.access ?? data?.token ?? null;
+      const refresh = data?.tokens?.refresh ?? data?.refresh ?? null;
+
+      if (access) localStorage.setItem("access", access);
+      if (refresh) localStorage.setItem("refresh", refresh);
+
+      // Ưu tiên ?next=... trên URL nếu có
+      const nextFromQuery =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("next")
+          : null;
+
+      if (onSuccess) {
+        onSuccess(data);
+      } else {
+        window.location.href = nextFromQuery || onRedirect || "/";
       }
-
-      // Expect tokens {access, refresh}
-      const access = data?.tokens?.access;
-      const refresh = data?.tokens?.refresh;
-      if (access) localStorage.setItem("access_token", access);
-      if (refresh) localStorage.setItem("refresh_token", refresh);
-
-      if (onSuccess) onSuccess(data);
-      else if (onRedirect) window.location.href = onRedirect;
     } catch (err) {
-      setError(err.message || "Có lỗi xảy ra, thử lại sau.");
+      const msg =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Không thể đăng nhập. Vui lòng kiểm tra thông tin.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -72,7 +71,11 @@ export default function LoginPage({
         <button
           className="absolute -left-2 -top-2 text-gray-400 hover:text-gray-600 p-2"
           aria-label="Đóng"
-          onClick={() => (window.history.length > 1 ? window.history.back() : (window.location.href = "/"))}
+          onClick={() =>
+            window.history.length > 1
+              ? window.history.back()
+              : (window.location.href = "/")
+          }
         >
           ×
         </button>
@@ -82,7 +85,9 @@ export default function LoginPage({
           <div className="flex items-center justify-between mb-6">
             <div className="flex-1 flex justify-center">
               {logo ?? (
-                <h1 className="text-2xl font-extrabold tracking-tight">Đăng nhập</h1>
+                <h1 className="text-2xl font-extrabold tracking-tight">
+                  Đăng nhập
+                </h1>
               )}
             </div>
             <a
@@ -147,20 +152,22 @@ export default function LoginPage({
           {/* Divider */}
           <div className="flex items-center my-6">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="px-3 text-xs font-bold text-gray-400 tracking-wider">HOẶC</span>
+            <span className="px-3 text-xs font-bold text-gray-400 tracking-wider">
+              HOẶC
+            </span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
           {/* Social Logins (wire up to your OAuth routes) */}
           <div className="grid grid-cols-2 gap-3">
             <a
-              href="#" // e.g., http://127.0.0.1:8000/api/users/auth/google/start
+              href="#"
               className="rounded-xl border border-gray-200 px-4 py-3 text-center font-semibold hover:bg-gray-50"
             >
               GOOGLE
             </a>
             <a
-              href="#" // e.g., http://127.0.0.1:8000/api/users/auth/facebook/start
+              href="#"
               className="rounded-xl border border-gray-200 px-4 py-3 text-center font-semibold hover:bg-gray-50"
             >
               FACEBOOK
@@ -169,9 +176,11 @@ export default function LoginPage({
 
           {/* Terms */}
           <p className="mt-6 text-xs text-center text-gray-500 leading-relaxed">
-            Khi đăng ký trên nền tảng, bạn đã đồng ý với <span className="font-semibold">Các chính sách</span> và
-            <span className="font-semibold"> Chính sách bảo mật</span> của chúng tôi. Trang này được bảo vệ bởi
-            reCAPTCHA Enterprise và áp dụng <span className="font-semibold">Chính sách bảo mật</span> và
+            Khi đăng ký trên nền tảng, bạn đã đồng ý với{" "}
+            <span className="font-semibold">Các chính sách</span> và
+            <span className="font-semibold"> Chính sách bảo mật</span> của chúng tôi.
+            Trang này được bảo vệ bởi reCAPTCHA Enterprise và áp dụng{" "}
+            <span className="font-semibold">Chính sách bảo mật</span> và
             <span className="font-semibold"> Điều khoản dịch vụ</span> của Google.
           </p>
         </div>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { api } from '../../api/api';
 import TitleCard from '../Cards/TitleCard';
+import LessonCard from '../Cards/LessonCard';
 
 // PRNG + river helpers
 function mulberry32(a){return function(){let t=(a+=0x6D2B79F5);t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
@@ -24,43 +25,114 @@ function smoothPath(points,tension=1){
 const DEBUG = import.meta.env.DEV || localStorage.getItem('debug_api') === '1';
 
 export default function Learn() {
-  // 1) Lấy danh sách topics
+  // State
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
-  const [current, setCurrent] = useState(0); // index đang chọn
+  const [current, setCurrent] = useState(0);
 
+  // abbr hiện tại (StatsBar sẽ set localStorage('learn') = abbr)
+  const [abbr, setAbbr] = useState(() => {
+    const a = (localStorage.getItem('learn') || '').split('-')[0].toLowerCase();
+    return a || '';
+  });
+
+  // bắt thay đổi abbr từ StatsBar (storage / visibilitychange / custom event)
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'learn') {
+        const v = (e.newValue || '').split('-')[0].toLowerCase();
+        if (v && v !== abbr) setAbbr(v);
+      }
+    };
+    const onVisible = () => {
+      const v = (localStorage.getItem('learn') || '').split('-')[0].toLowerCase();
+      if (v && v !== abbr) setAbbr(v);
+    };
+    const onCustom = (e) => {
+      const v = (e?.detail?.abbr || '').split('-')[0].toLowerCase();
+      if (v && v !== abbr) setAbbr(v);
+    };
+    window.addEventListener('storage', onStorage);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('learn:changed', onCustom);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('learn:changed', onCustom);
+    };
+  }, [abbr]);
+
+  // Load topics theo /topics/by-language/?language_abbr=<abbr>
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
 
     (async () => {
-      setLoading(true); setErr('');
-      const params = { page_size: 200 }; // có thể thêm language, ordering...
-      const t0 = performance.now();
+      setLoading(true);
+      setErr('');
+
       try {
-        DEBUG && console.groupCollapsed('%c[Learn] GET /api/topics/', 'color:#22c55e;font-weight:700');
+        // guard: chưa đăng nhập thì thôi (tránh 401 → redirect)
+        const access = localStorage.getItem('access');
+        if (!access) {
+          setTopics([]);
+          setLoading(false);
+          if (DEBUG) console.info('[Learn] no access token → skip fetch');
+          return;
+        }
+
+        // nếu chưa có abbr, thử lấy từ enrollments/me (bản đầu tiên) để tự set
+        let effectiveAbbr = abbr;
+        if (!effectiveAbbr) {
+          const me = await api.Enrollments.me();
+          const items = Array.isArray(me) ? me : (me?.results || []);
+          const first = items[0];
+          if (first) {
+            effectiveAbbr = (first?.language?.abbreviation || first?.language?.code || '').toLowerCase();
+            if (effectiveAbbr) {
+              localStorage.setItem('learn', effectiveAbbr);
+              setAbbr(effectiveAbbr);
+            }
+          }
+        }
+
+        if (!effectiveAbbr) {
+          setTopics([]);
+          setLoading(false);
+          if (DEBUG) console.warn('[Learn] no abbr to load topics');
+          return;
+        }
+
+        const params = { language_abbr: effectiveAbbr, page_size: 200 };
+        DEBUG && console.groupCollapsed('%c[Learn] GET /api/topics/by-language/', 'color:#22c55e;font-weight:700');
         DEBUG && console.log('Params:', params);
 
-        const res = await api.Topics.list(params, { signal: controller.signal });
+        const res = await api.Topics.byLanguage(params, { signal: controller.signal });
         const raw = Array.isArray(res?.results) ? res.results : (Array.isArray(res) ? res : []);
-        // sort ổn định
+        // BE đã order_by("order","id"), nhưng ta vẫn sort ổn định dự phòng
         const items = [...(raw || [])].sort((a,b) => (a.order - b.order) || (a.id - b.id));
 
-        if (!cancelled) setTopics(items);
+        if (!cancelled) {
+          setTopics(items);
+          setCurrent(0);
+        }
 
         if (DEBUG) {
-          const t1 = performance.now();
-          console.log('Count:', items.length, '| Duration:', Math.round(t1 - t0) + 'ms');
-          console.table(items.map(({ id, order, title, language }) => ({ id, order, language, title })));
+          const count = items.length;
+          console.log('abbr:', effectiveAbbr, '| Count:', count);
+          if (count) {
+            console.table(items.map(({ id, order, title, language }) => ({
+              id, order, abbr: language?.abbreviation || language?.code, title
+            })));
+          }
           console.groupEnd();
         }
       } catch (e) {
         if (!cancelled) setErr(e?.message || 'Failed to load topics');
         if (DEBUG) {
-          console.group('%c[Learn] /api/topics ERROR', 'color:#ef4444;font-weight:700');
+          console.group('%c[Learn] /topics/by-language ERROR', 'color:#ef4444;font-weight:700');
           console.error(e);
-          // axios-like error detail
           const resp = e?.response;
           if (resp) {
             console.log('Status:', resp.status);
@@ -77,9 +149,9 @@ export default function Learn() {
     })();
 
     return () => { cancelled = true; controller.abort(); };
-  }, []);
+  }, [abbr]);
 
-  // 2) River path + nodes
+  // River + nodes
   const [seed, setSeed] = useState(() => Math.floor(Math.random()*1e9));
   const count = Math.max(topics.length, 1);
   const svgH  = 40 + (count - 1) * 130 + 220;
@@ -89,9 +161,11 @@ export default function Learn() {
 
   // debug current
   useEffect(() => {
-    if (!DEBUG) return;
-    if (!selectedTopic) return;
-    console.log('[Learn] Current topic:', { idx: current, id: selectedTopic.id, order: selectedTopic.order, title: selectedTopic.title });
+    if (!DEBUG || !selectedTopic) return;
+    console.log('[Learn] Current topic:', {
+      idx: current, id: selectedTopic.id, order: selectedTopic.order,
+      title: selectedTopic.title, lang: selectedTopic.language
+    });
   }, [current, selectedTopic]);
 
   return (
@@ -123,7 +197,7 @@ export default function Learn() {
         </div>
       )}
 
-      {/* River + nodes ở giữa */}
+      {/* River + nodes */}
       <div className="relative mx-auto mt-4 w-[260px] pb-24">
         <svg className="block w-full" style={{ height: svgH }} viewBox={`0 0 260 ${svgH}`} preserveAspectRatio="xMidYMid meet">
           <defs>
@@ -135,44 +209,7 @@ export default function Learn() {
           <path d={riverD} fill="none" stroke="url(#river)" strokeWidth="12" strokeLinecap="round" />
         </svg>
 
-        {pts.map((p, i) => {
-          const isActive = i === current;
-          const icon = isActive ? '★' : (topics[i]?.golden ? '🏆' : '📖');
-          return (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className="absolute z-10"
-              style={{ left: p.x - 47, top: p.y - 47 }} // 94/2
-              title={`${topics[i]?.title || 'Bài học'} (CỬA ${topics[i]?.order ?? '?'})`}
-            >
-              <div className={[
-                'relative grid h-[94px] w-[94px] place-items-center rounded-full bg-white',
-                isActive ? 'border-4 border-sky-500 shadow-[0_10px_0_0_#c7eaff]' :
-                           'border-4 border-slate-300 text-slate-400 shadow-[0_10px_0_0_#e9eef5]',
-              ].join(' ')}>
-                {isActive ? (
-                  <>
-                    <div className="absolute -inset-1 rounded-full bg-[conic-gradient(theme(colors.sky.500)_270deg,theme(colors.sky.100)_0)] animate-[spin_3.2s_linear_infinite]" />
-                    <div className="relative grid h-[82px] w-[82px] place-items-center rounded-full text-[30px] text-white shadow-sm bg-[radial-gradient(circle_at_50%_45%,#69d2ff_0_48%,#1cb0f6_49%_100%)]">{icon}</div>
-                  </>
-                ) : (
-                  <span className="translate-y-[-2px] text-[30px]">{icon}</span>
-                )}
-              </div>
-            </button>
-          );
-        })}
-
-        {/* rương cuối */}
-        {pts[count-1] && (
-          <div
-            className="absolute z-10 h-[74px] w-[96px] rounded-2xl border-4 border-slate-300 bg-[linear-gradient(180deg,#d9dee6_0%,#f3f6f9_100%)] shadow-[0_6px_0_0_#e6ebf2]"
-            style={{ left: pts[count-1].x - 48, top: pts[count-1].y + 90 }}
-          >
-            <div className="absolute left-1/2 top-1/2 h-6 w-11 -translate-x-1/2 -translate-y-1/2 rounded-md bg-[#bfc8d5] shadow-[inset_0_0_0_3px_#e8edf5] animate-blink" />
-          </div>
-        )}
+        <LessonCard topicId={selectedTopic?.id} />
       </div>
     </div>
   );

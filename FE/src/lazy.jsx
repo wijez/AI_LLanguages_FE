@@ -1,39 +1,33 @@
 import { lazy } from 'react';
 
-// helper 
-const L = (p) => lazy(() => import(p));
-
-// Nav + layout
-export const LeftNav            = L('./components/LeftNav.jsx');
-export const RightNav           = L('./components/RightNav.jsx');
-export const MainLayout         = L('./layouts/MainLayout.jsx');
-export const MobileBottomNav    = L('./components/Bars/MobileBottomNav.jsx');
+export const LeftNav = lazy(() => import('./components/LeftNav.jsx'));
+export const RightNav = lazy(() => import('./components/RightNav.jsx'));
+export const MainLayout = lazy(() => import('./layouts/MainLayout.jsx'));
+export const MobileBottomNav = lazy(() => import('./components/Bars/MobileBottomNav.jsx'));
 
 // Dropdowns
-export const  LanguageDropdown  = L('./components/Dropdowns/LanguageDropdown.jsx');
+export const LanguageDropdown = lazy(() => import('./components/Dropdowns/LanguageDropdown.jsx'));
+
 // Contents
-export const Practice       = L('./components/Contents/Practice.jsx');
-export const Learn          = L('./components/Contents/Learn.jsx');
-export const Task           = L('./components/Contents/Task.jsx');
-export const Rank           = L('./components/Contents/Rank.jsx');
-export const Info           = L('./components/Contents/Info.jsx');
-export const Profile        = L('./components/Contents/Profile.jsx');
-export const More           = L('./components/Contents/More.jsx');
-export const Speech         = L('./components/Contents/Speech.jsx');
-export const Exercise       = L('./components/Contents/Exercise.jsx');
-export const Shop           = L('./components/Contents/Shop.jsx');
+export const Practice = lazy(() => import('./components/Contents/Practice.jsx'));
+export const Learn = lazy(() => import('./components/Contents/Learn.jsx'));
+export const Task = lazy(() => import('./components/Contents/Task.jsx'));
+export const Rank = lazy(() => import('./components/Contents/Rank.jsx'));
+export const Info = lazy(() => import('./components/Contents/Info.jsx'));
+export const Profile = lazy(() => import('./components/Contents/Profile.jsx'));
+export const More = lazy(() => import('./components/Contents/More.jsx'));
+export const Speech = lazy(() => import('./components/Contents/Speech.jsx'));
+// export const Exercise = lazy(() => import('./components/Contents/Exercise.jsx'));
+export const Shop = lazy(() => import('./components/Contents/Shop.jsx'));
 
 // Pages
-
-export const LandingPage     = L('./pages/LandingPage.jsx');
-export const TaskPage       = L('./pages/TaskPage.jsx');
-export const PracticePage   = L('./pages/PracticePage.jsx');
-export const LearnPage      = L('./pages/LearnPage.jsx');
-export const RankPage       = L('./pages/RankPage.jsx');
-export const InfoPage       = L('./pages/InfoPage.jsx');
-export const MorePage       = L('./pages/MorePage.jsx');
-export const SpeechPage     = L('./pages/SpeechPage.jsx');
-export const ShopPage       = L('./pages/ShopPage.jsx');
-export const SignupPage     = L('./pages/SignUpPage.jsx');
-
-
+export const LandingPage = lazy(() => import('./pages/LandingPage.jsx'));
+export const TaskPage = lazy(() => import('./pages/TaskPage.jsx'));
+export const PracticePage = lazy(() => import('./pages/PracticePage.jsx'));
+export const LearnPage = lazy(() => import('./pages/LearnPage.jsx'));
+export const RankPage = lazy(() => import('./pages/RankPage.jsx'));
+export const InfoPage = lazy(() => import('./pages/InfoPage.jsx'));
+export const MorePage = lazy(() => import('./pages/MorePage.jsx'));
+export const SpeechPage = lazy(() => import('./pages/SpeechPage.jsx'));
+export const ShopPage = lazy(() => import('./pages/ShopPage.jsx'));
+export const SignupPage = lazy(() => import('./pages/SignUpPage.jsx'));

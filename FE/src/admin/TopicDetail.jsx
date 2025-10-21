@@ -13,14 +13,14 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { DataGrid } from '@mui/x-data-grid';
 
-export default function TopicDetail() {
+export default function SkillDetail() {
+  // id là Skill ID (ví dụ: /admin/skills/:id)
   const { id } = useParams();
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up('md'));
 
-  const [topic, setTopic] = React.useState(null);
+  const [skill, setSkill] = React.useState(null);
   const [lessons, setLessons] = React.useState([]);
-  const [skills, setSkills] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState('');
 
@@ -32,30 +32,35 @@ export default function TopicDetail() {
         setLoading(true);
         setErr('');
 
-        // 1) Topic
-        const t = await api.Topics.get(id, { ttl: 0 });
-        if (!cancel) setTopic(t);
+        // 1) Skill detail: GET /api/skills/:id/
+        const rawSkill = await api.Skills.get(id, { ttl: 0 });
+        const normalizedSkill = {
+          id: rawSkill.id,
+          name: rawSkill.name || rawSkill.title || `Skill ${rawSkill.id}`,
+          order: rawSkill.order ?? rawSkill.position ?? 0,
+          slug: rawSkill.slug,
+          topic: rawSkill.topic,
+          description: rawSkill.description,
+          ...rawSkill,
+        };
+        if (!cancel) setSkill(normalizedSkill);
 
-        // 2) Lessons theo topic
-        const l = await api.Lessons.list({ topic: id, page_size: 200 }, { ttl: 0 });
-        const lItems = Array.isArray(l?.results) ? l.results : (Array.isArray(l) ? l : []);
-        lItems.sort((a, b) => (a.order - b.order) || (a.id - b.id));
-        if (!cancel) setLessons(lItems);
-
-        // 3) Skills theo topic (KHÔNG dùng topic-skill)
-        const s = await api.Skills.list({ topic: id, page_size: 200 }, { ttl: 0 });
-        const sItemsRaw = Array.isArray(s?.results) ? s.results : (Array.isArray(s) ? s : []);
-        const sItems = sItemsRaw
-          .map(r => ({
+        // 2) Lessons theo skill: GET /api/skills/:id/lessons/
+        const l = await api.Skills.lessons(id, { page_size: 200 }, { ttl: 0 });
+        const lItemsRaw = Array.isArray(l?.results) ? l.results : (Array.isArray(l) ? l : []);
+        const lItems = lItemsRaw
+          .map((r) => ({
             id: r.id,
-            name: r.name || r.title || `Skill ${r.id}`,
+            title: r.title || r.name || `Lesson ${r.id}`,
             order: r.order ?? r.position ?? 0,
             slug: r.slug,
+            ...r,
           }))
           .sort((a, b) => (a.order - b.order) || (a.id - b.id));
-        if (!cancel) setSkills(sItems);
+        if (!cancel) setLessons(lItems);
+
       } catch (e) {
-        if (!cancel) setErr(e?.message || 'Failed to load topic detail');
+        if (!cancel) setErr(e?.message || 'Failed to load skill detail');
       } finally {
         if (!cancel) setLoading(false);
       }
@@ -64,19 +69,23 @@ export default function TopicDetail() {
     return () => { cancel = true; };
   }, [id]);
 
-  const gridHeight = mdUp ? 420 : undefined; // mdUp: cố định, mobile: autoHeight
+  const gridHeight = mdUp ? 420 : undefined;
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
         <Box component="h2" m={0} fontSize={22} fontWeight={800} sx={{ lineHeight: 1.2 }}>
-          Topic Detail {topic ? `#${topic.id} – ${topic.title}` : ''}
+          Skill Detail {skill ? `#${skill.id} – ${skill.name}` : ''}
         </Box>
         <Stack direction="row" alignItems="center" spacing={1}>
-          {topic?.language && (
+          {skill?.topic && (
             <Chip
-              label={`Lang: ${typeof topic.language === 'string' ? topic.language : topic.language?.code}`}
+              label={`Topic: ${
+                typeof skill.topic === 'string'
+                  ? skill.topic
+                  : (skill.topic?.title || skill.topic?.slug || skill.topic?.id || 'N/A')
+              }`}
               size="small"
               color="primary"
               variant="outlined"
@@ -90,22 +99,24 @@ export default function TopicDetail() {
       {loading && <Box color="text.secondary">Loading…</Box>}
 
       {/* Summary */}
-      {topic && (
+      {skill && (
         <Paper sx={{ p: 2, borderRadius: 2 }}>
           <Typography fontWeight={700} mb={1}>Summary</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr 1fr' }, gap: 1 }}>
-            <div><b>Slug:</b> {topic.slug}</div>
-            <div><b>Order:</b> {topic.order}</div>
-            <div><b>Golden:</b> {String(topic.golden)}</div>
-            <div><b>Language:</b> {typeof topic.language === 'string' ? topic.language : topic.language?.code}</div>
+            <div><b>Slug:</b> {skill.slug ?? '—'}</div>
+            <div><b>Order:</b> {skill.order}</div>
+            <div><b>Topic:</b> {typeof skill.topic === 'string'
+              ? skill.topic
+              : (skill.topic?.title || skill.topic?.slug || skill.topic?.id || '—')}</div>
+            <div><b>ID:</b> {skill.id}</div>
           </Box>
-          {topic.description && (
-            <Box mt={1}><b>Description:</b> {topic.description}</Box>
+          {skill.description && (
+            <Box mt={1}><b>Description:</b> {skill.description}</Box>
           )}
         </Paper>
       )}
 
-      {/* Two-column responsive: Lessons / Skills */}
+      {/* Two-column: Lessons / Skill (single row) */}
       <Box
         sx={{
           display: 'grid',
@@ -137,18 +148,18 @@ export default function TopicDetail() {
           </div>
         </Paper>
 
-        {/* Skills */}
+        {/* Skill (1 row) */}
         <Paper sx={{ p: 2, borderRadius: 2 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
-            <Typography fontWeight={700}>Skills</Typography>
-            <Chip size="small" label={`${skills.length} items`} />
+            <Typography fontWeight={700}>Skill</Typography>
+            <Chip size="small" label={`${skill ? 1 : 0} item`} />
           </Stack>
 
           <div style={{ width: '100%', height: gridHeight }}>
             <DataGrid
               density="compact"
               autoHeight={!mdUp}
-              rows={skills}
+              rows={skill ? [skill] : []}
               getRowId={(r) => r.id}
               columns={[
                 { field: 'id', headerName: 'ID', width: 90 },

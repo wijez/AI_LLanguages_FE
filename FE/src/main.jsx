@@ -1,16 +1,19 @@
-import React, { StrictMode, Suspense } from 'react';
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import './i18n/config.js'
+import React, { StrictMode, Suspense } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import "./i18n/config.js";
+import ReactDOM from "react-dom/client";
+import { Provider } from "react-redux";
+import { store } from "./store/store";
 
-import App from './App.jsx'
+import App from "./App.jsx";
 
-createRoot(document.getElementById('root')).render(
-  
-     <StrictMode>
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <Provider store={store}>
       <Suspense fallback={null}>
-       <App />
-    </Suspense>
-
-     </StrictMode>
-)
+        <App />
+      </Suspense>
+    </Provider>
+  </StrictMode>
+);

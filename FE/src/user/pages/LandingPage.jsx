@@ -1,9 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import LanguageDropdown from '../components/Dropdowns/LanguageDropdown';
-import Elephant from '../assets/elephant.svg?url';
-import FullElephant from '../assets/fullelephant.png?url';
+import LanguageDropdown from '../../components/Dropdowns/LanguageDropdown';
+import Elephant from '../../assets/elephant.svg?url';
+import FullElephant from '../../assets/fullelephant.png?url';
 
 function LangChip({ flag, label, active }) {
   return (
@@ -39,7 +39,7 @@ export default function LandingPage() {
         <div className="max-w-[1200px] mx-auto px-4 grid md:grid-cols-2 gap-10 items-center">
           {/* left art */}
           <div className="order-2 md:order-1 md:pl-6">
-             <img src={FullElephant} alt="FullElephant" />;
+             <img src={FullElephant} alt="FullElephant" />
           </div>
 
           {/* right text + CTA */}

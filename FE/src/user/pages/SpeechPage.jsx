@@ -1,5 +1,5 @@
 import React from 'react'
-import { MainLayout, Speech } from '../lazy'
+import { MainLayout, Speech } from '../../lazy'
 
 export default function SpeechPage() {
   return (

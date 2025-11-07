@@ -1,5 +1,5 @@
 import React from 'react'
-import { MainLayout, More } from '../lazy'
+import { MainLayout, More } from '../../lazy'
 
 export default function MorePage() {
   return (

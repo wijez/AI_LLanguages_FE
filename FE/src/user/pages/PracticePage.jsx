@@ -1,5 +1,5 @@
 import React from 'react'
-import { MainLayout, Practice } from '../lazy'
+import { MainLayout, Practice } from '../../lazy'
 
 
 export default function PracticePage() {

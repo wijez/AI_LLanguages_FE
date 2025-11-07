@@ -1,5 +1,5 @@
 import React from 'react'
-import { MainLayout, Rank } from '../lazy'
+import { MainLayout, Rank } from '../../lazy'
 
 export default function RankPage() {
   return (

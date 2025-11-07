@@ -1,10 +1,10 @@
 import React from 'react'
-import { MainLayout, Info } from '../lazy'
+import { MainLayout, Info } from '../../lazy'
 
 
 export default function InfoPage() {
   return (
-    <MainLayout>
+    <MainLayout >
       <Info />
     </MainLayout>
   )

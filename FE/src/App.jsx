@@ -5,12 +5,13 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { 
   PracticePage, LearnPage, RankPage, InfoPage, 
   MorePage, SpeechPage, TaskPage, ShopPage,
-  LandingPage
+  LandingPage, SignupPage,LoginPage
 } from './lazy'
 import AppAdmin from './admin/AppAdmin.jsx'
 import  AppProviders  from './AppProviders.jsx'
-import SignupPage from './pages/SignUpPage.jsx'
-import LoginPage from './pages/LoginPage.jsx'
+import LessonSession from './components/Sessions/LessonSession.jsx'
+import RegisterAccountPage from './user/pages/RegisterAccountPage.jsx';
+import VerifyCodePage from './user/pages/VerifyCodePage.jsx';
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
     <AppProviders>
     <BrowserRouter>
       <Routes>
+        <Route path="/learn/session/:id" element={<LessonSession />} />
         <Route path="/" element={<LandingPage/>} />
         <Route path="/learn" element={<LearnPage />} />
         <Route path="/speech" element={<SpeechPage />} />
@@ -30,6 +32,8 @@ function App() {
         <Route path="/admin/*" element={<AppAdmin/>} />
         <Route path="/register/" element={<SignupPage/>} />
         <Route path="/login/" element={<LoginPage />} />
+        <Route path="/signup" element={ <RegisterAccountPage />} />
+        <Route path="/verify" element={ <VerifyCodePage />} />
       </Routes>
     </BrowserRouter>
     </AppProviders>

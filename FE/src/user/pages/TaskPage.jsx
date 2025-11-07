@@ -1,5 +1,5 @@
 import React from 'react'
-import { MainLayout, Task } from '../lazy'
+import { MainLayout, Task } from '../../lazy'
 
 export default function TaskPage() {
   return (

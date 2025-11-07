@@ -21,13 +21,14 @@ export const Speech = lazy(() => import('./components/Contents/Speech.jsx'));
 export const Shop = lazy(() => import('./components/Contents/Shop.jsx'));
 
 // Pages
-export const LandingPage = lazy(() => import('./pages/LandingPage.jsx'));
-export const TaskPage = lazy(() => import('./pages/TaskPage.jsx'));
-export const PracticePage = lazy(() => import('./pages/PracticePage.jsx'));
-export const LearnPage = lazy(() => import('./pages/LearnPage.jsx'));
-export const RankPage = lazy(() => import('./pages/RankPage.jsx'));
-export const InfoPage = lazy(() => import('./pages/InfoPage.jsx'));
-export const MorePage = lazy(() => import('./pages/MorePage.jsx'));
-export const SpeechPage = lazy(() => import('./pages/SpeechPage.jsx'));
-export const ShopPage = lazy(() => import('./pages/ShopPage.jsx'));
-export const SignupPage = lazy(() => import('./pages/SignUpPage.jsx'));
+export const LandingPage = lazy(() => import('./user/pages/LandingPage.jsx'));
+export const TaskPage = lazy(() => import('./user/pages/TaskPage.jsx'));
+export const PracticePage = lazy(() => import('./user/pages/PracticePage.jsx'));
+export const LearnPage = lazy(() => import('./user/pages/LearnPage.jsx'));
+export const RankPage = lazy(() => import('./user/pages/RankPage.jsx'));
+export const InfoPage = lazy(() => import('./user/pages/InfoPage.jsx'));
+export const MorePage = lazy(() => import('./user/pages/MorePage.jsx'));
+export const SpeechPage = lazy(() => import('./user/pages/SpeechPage.jsx'));
+export const ShopPage = lazy(() => import('./user/pages/ShopPage.jsx'));
+export const SignupPage = lazy(() => import('./user/pages/SignUpPage.jsx'));
+export const LoginPage = lazy(() => import('./user/pages/LoginPage.jsx'));

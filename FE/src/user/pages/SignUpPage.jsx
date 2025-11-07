@@ -1,10 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import LanguageDropdown from '../components/Dropdowns/LanguageDropdown';
-import LangFlag from '../components/LangFlag.jsx';
-import Elephant from '../assets/elephant.svg?url';
-import { api } from '../api/api';
+import LanguageDropdown from '../../components/Dropdowns/LanguageDropdown';
+import LangFlag from '../../components/LangFlag.jsx';
+import Elephant from '../../assets/elephant.svg?url';
+import { api } from '../../api/api';
 
 export default function SignupPage({ onSelect }) {
   const { t, i18n } = useTranslation(['signup', 'common']);

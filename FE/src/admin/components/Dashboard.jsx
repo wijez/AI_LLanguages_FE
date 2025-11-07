@@ -24,17 +24,31 @@ export default function Dashboard() {
   return (
     <Box>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={5} lg={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 5,
+            lg: 4
+          }}>
           <Card bg="linear-gradient(135deg,#6a11cb 0%,#3910a1 100%)" title="Total Earning" value="$500.00" icon={<SettingsRounded/>}/>
         </Grid>
-        <Grid item xs={12} md={4} lg={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 4,
+            lg: 4
+          }}>
           <Card bg="linear-gradient(135deg,#0ea5e9 0%,#0369a1 100%)" title="Total Order" value="$108" icon={<SettingsRounded/>}/>
         </Grid>
-        <Grid item xs={12} md={3} lg={4}>
+        <Grid
+          size={{
+            xs: 12,
+            md: 3,
+            lg: 4
+          }}>
           <Card bg="linear-gradient(135deg,#1d4ed8 0%,#0b3ea8 100%)" title="Total Income" value="$203k" icon={<SettingsRounded/>}/>
         </Grid>
       </Grid>
-
       <Paper sx={{ mt: 2, p: 2.5, borderRadius: 3 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography fontWeight={800}>Total Growth</Typography>

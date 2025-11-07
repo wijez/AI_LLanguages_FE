@@ -4,7 +4,7 @@ import TournamentCard from './Cards/TournamentCard'
 import StatsBar from './Bars/StatsBar'
 import Links from './Footers/Links'
 
-export default function RightNav() {
+function RightNav() {
   const learn =
     typeof window !== 'undefined'
       ? (localStorage.getItem('learn') || '').split('-')[0] || undefined
@@ -19,3 +19,5 @@ export default function RightNav() {
     </div>
   )
 }
+
+export default React.memo(RightNav);

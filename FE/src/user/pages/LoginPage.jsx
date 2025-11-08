@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { api } from "../../api/api"; 
+import { api } from "../../api/api";
+import Spinner from "../../components/Spinner";
+import { toast } from "react-hot-toast";
 
 /**
  * LoginPage – Duolingo-style login screen
@@ -9,18 +11,15 @@ import { api } from "../../api/api";
  *  - onRedirect: string – đường dẫn redirect sau khi login (nếu không truyền onSuccess)
  *  - logo: ReactNode – custom logo element
  */
-export default function LoginPage({
-  onSuccess,
-  onRedirect = "/",
-  logo,
-}) {
+export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
   const [identifier, setIdentifier] = useState(""); // email hoặc username
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const canSubmit = identifier.trim().length > 0 && password.length >= 1 && !loading;
+  const canSubmit =
+    identifier.trim().length > 0 && password.length >= 1 && !loading;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -35,7 +34,8 @@ export default function LoginPage({
         password,
       });
 
-      const access = data?.tokens?.access ?? data?.access ?? data?.token ?? null;
+      const access =
+        data?.tokens?.access ?? data?.access ?? data?.token ?? null;
       const refresh = data?.tokens?.refresh ?? data?.refresh ?? null;
 
       if (access) localStorage.setItem("access", access);
@@ -59,6 +59,7 @@ export default function LoginPage({
         err?.message ||
         "Không thể đăng nhập. Vui lòng kiểm tra thông tin.";
       setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -82,17 +83,18 @@ export default function LoginPage({
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] px-8 py-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1 flex justify-center">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-6">
+            <div /> {/* placeholder để cân trái */}
+            <div className="justify-self-center">
               {logo ?? (
                 <h1 className="text-2xl font-extrabold tracking-tight">
-                  Đăng nhập
+                  LOGIN
                 </h1>
               )}
             </div>
             <a
-              href="/signup"
-              className="ml-4 text-sm font-semibold text-sky-600 hover:text-sky-700 border rounded-full px-4 py-2 shadow-sm"
+              href="/register"
+              className="justify-self-end ml-4 text-sm font-semibold text-sky-600 hover:text-sky-700 border rounded-full px-4 py-2 shadow-sm"
             >
               ĐĂNG KÝ
             </a>
@@ -145,7 +147,8 @@ export default function LoginPage({
                   : "bg-sky-300 cursor-not-allowed")
               }
             >
-              {loading ? "Đang đăng nhập…" : "ĐĂNG NHẬP"}
+              ĐĂNG NHẬP
+              {loading && <Spinner />}
             </button>
           </form>
 
@@ -178,10 +181,11 @@ export default function LoginPage({
           <p className="mt-6 text-xs text-center text-gray-500 leading-relaxed">
             Khi đăng ký trên nền tảng, bạn đã đồng ý với{" "}
             <span className="font-semibold">Các chính sách</span> và
-            <span className="font-semibold"> Chính sách bảo mật</span> của chúng tôi.
-            Trang này được bảo vệ bởi reCAPTCHA Enterprise và áp dụng{" "}
+            <span className="font-semibold"> Chính sách bảo mật</span> của chúng
+            tôi. Trang này được bảo vệ bởi reCAPTCHA Enterprise và áp dụng{" "}
             <span className="font-semibold">Chính sách bảo mật</span> và
-            <span className="font-semibold"> Điều khoản dịch vụ</span> của Google.
+            <span className="font-semibold"> Điều khoản dịch vụ</span> của
+            Google.
           </p>
         </div>
       </div>

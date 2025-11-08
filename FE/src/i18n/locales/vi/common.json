@@ -3,5 +3,50 @@
     "display": "{{name}}",
     "vi": "Tiếng Việt", "en": "Tiếng Anh", "zh": "Tiếng Hoa", "ja": "Tiếng Nhật", "ko": "Tiếng Hàn"
   },
-  "cta": { "start": "BẮT ĐẦU", "login": "TÔI ĐÃ CÓ TÀI KHOẢN" }
+  "cta": { "start": "BẮT ĐẦU", "login": "TÔI ĐÃ CÓ TÀI KHOẢN" },
+  "nav": {
+    "learn": "Học",
+    "pronunciation": "Phát âm",
+    "practice": "Luyện tập",
+    "rank": "Bảng xếp hạng",
+    "tasks": "Nhiệm vụ",
+    "shop": "Cửa hàng",
+    "profile": "Hồ sơ",
+    "more": "Xem thêm",
+    "addLanguage": "Đăng ký ngôn ngữ mới",
+    "newsfeed": "Bảng tin"
+  },
+  "stats": {
+    "change_language": "Đổi ngôn ngữ",
+    "no_enrollments": "Chưa có khóa học nào",
+    "streak_title": "Chuỗi ngày (streak)",
+    "total_xp_title": "Tổng XP",
+    "lv": "Cấp",
+    "xp": "XP",
+    "practiced": {
+      "today": "Đã luyện hôm nay",
+      "yesterday": "Đã luyện hôm qua",
+      "daysAgo_one": "Đã luyện {{count}} ngày trước",
+      "daysAgo_other": "Đã luyện {{count}} ngày trước"
+    }
+  },
+  "daily": {
+    "title": "Nhiệm vụ hàng ngày",
+    "viewAll": "XEM TẤT CẢ"
+  },
+  "tournament": {
+    "title": "Giải đấu {{name}}",
+    "viewLeague": "XEM GIẢI ĐẤU",
+    "name": { "sapphire": "Lam Ngọc" },
+    "you_ranked": "Bạn đã đạt vị trí thứ {{position}}",
+    "keep_top_n": "Tiếp tục phấn đấu để giữ vị trí trong top {{n}}!"
+  },
+  "links": {
+    "about": "Giới thiệu",
+    "shop": "Cửa hàng",
+    "effectiveness": "Tính hiệu quả",
+    "jobs": "Công việc",
+    "investors": "Nhà đầu tư",
+    "terms": "Điều khoản"
+  }
 }

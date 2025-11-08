@@ -1,7 +1,57 @@
 {
   "lang": {
     "display": "{{name}}",
-    "vi": "Vietnamese", "en": "English", "zh": "Chinese", "ja": "Japanese", "ko": "Korean"
+    "vi": "Vietnamese",
+    "en": "English",
+    "zh": "Chinese",
+    "ja": "Japanese",
+    "ko": "Korean"
   },
-  "cta": { "start": "GET STARTED", "login": "I ALREADY HAVE AN ACCOUNT" }
+  "cta": { "start": "GET STARTED", "login": "I ALREADY HAVE AN ACCOUNT" },
+
+  "nav": {
+    "learn": "Learn",
+    "pronunciation": "Pronunciation",
+    "practice": "Practice",
+    "rank": "Leaderboard",
+    "tasks": "Missions",
+    "shop": "Shop",
+    "profile": "Profile",
+    "more": "More",
+    "addLanguage": "Add New Language",
+    "newsfeed": "Newsfeed"
+  },
+  "stats": {
+    "change_language": "Change language",
+    "no_enrollments": "No enrollments",
+    "streak_title": "Streak (days)",
+    "total_xp_title": "Total XP",
+    "lv": "LV",
+    "xp": "XP",
+    "practiced": {
+      "today": "Practiced today",
+      "yesterday": "Practiced yesterday",
+      "daysAgo_one": "Practiced {{count}} day ago",
+      "daysAgo_other": "Practiced {{count}} days ago"
+    }
+  },
+  "daily": {
+    "title": "Daily quests",
+    "viewAll": "VIEW ALL"
+  },
+  "tournament": {
+    "title": "{{name}}",
+    "viewLeague": "VIEW LEAGUE",
+    "name": { "sapphire": "Sapphire League" },
+    "you_ranked": "You have reached position {{position}}",
+    "keep_top_n": "Keep pushing to stay in top {{n}}!"
+  },
+  "links": {
+    "about": "About",
+    "shop": "Shop",
+    "effectiveness": "Effectiveness",
+    "jobs": "Jobs",
+    "investors": "Investors",
+    "terms": "Terms"
+  }
 }

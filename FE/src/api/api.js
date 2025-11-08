@@ -1,18 +1,17 @@
 import axios from "axios";
 
-/* =========================================================
- *  CẤU HÌNH CƠ BẢN
- * =======================================================*/
-const BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined"
-    ? `${window.location.origin}/api`
-    : "http://127.0.0.1:8000/api");
+const BASE_URL = (() => {
+  const env = import.meta.env.VITE_API_URL?.trim()?.replace(/\/$/, "");
+  if (env) return env;
+  if (typeof window !== "undefined") {
+    return `${window.location.origin.replace(/\/$/, "")}/api`; // dùng cùng origin nếu đã cấu hình proxy /api trên Vercel
+  }
+  throw new Error("VITE_API_URL is not set and window is undefined (SSR). Set VITE_API_URL in env.");
+})();
+
 
 const TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT || 20000);
-const REFRESH_URL =
-  (import.meta.env && import.meta.env.VITE_REFRESH_URL) ||
-  "http://127.0.0.1:8000/api/users/token/refresh/";
+const REFRESH_URL = new URL("/users/token/refresh/", BASE_URL).toString();
 
 // Bật log khi: chế độ dev, VITE_DEBUG_API=1, hoặc localStorage.debug_api=1
 const DEBUG =
@@ -26,28 +25,45 @@ const DEBUG =
 const instance = axios.create({
   baseURL: BASE_URL,
   timeout: TIMEOUT,
-  withCredentials: true, 
+  withCredentials: false, 
 });
 
 
 /* =========================================================
  *  REQUEST INTERCEPTOR (JWT + i18n + debug log)
  * =======================================================*/
-instance.interceptors.request.use((cfg) => {
+ instance.interceptors.request.use((cfg) => {
+  cfg.headers = cfg.headers || {};
+
+  // Chỉ bypass interstitial khi gọi ngrok
+  try {
+    const abs = new URL(cfg.url || "", cfg.baseURL || window.location.origin);
+    const isNgrok = /\.ngrok(?:-free)?\.app$/i.test(abs.host);
+    if (isNgrok) {
+      cfg.headers["ngrok-skip-browser-warning"] = "true";
+    } else {
+      delete cfg.headers["ngrok-skip-browser-warning"];
+    }
+  } catch {
+    // ignore URL parse errors
+  }
+
   // JWT
   const access =
     typeof window !== "undefined" ? localStorage.getItem("access") : null;
   if (access) cfg.headers.Authorization = `Bearer ${access}`;
+  else delete cfg.headers.Authorization;
 
   // i18n
   const lng =
     typeof window !== "undefined" ? localStorage.getItem("lang") : null;
   if (lng) cfg.headers["Accept-Language"] = lng;
+  else delete cfg.headers["Accept-Language"];
 
   if (DEBUG) {
     const method = (cfg.method || "get").toUpperCase();
     console.groupCollapsed(
-      `%c[API] → ${method} ${cfg.baseURL}${cfg.url}`,
+      `%c[API] → ${method} ${cfg.baseURL || ""}${cfg.url || ""}`,
       "color:#3b82f6;font-weight:700"
     );
     console.log("Headers:", cfg.headers);
@@ -55,9 +71,9 @@ instance.interceptors.request.use((cfg) => {
     console.log("Data   :", cfg.data);
     console.groupEnd();
   }
-
   return cfg;
 });
+
 
 /* =========================================================
  *  REFRESH TOKEN HELPER

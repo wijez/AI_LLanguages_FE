@@ -12,11 +12,13 @@ import  AppProviders  from './AppProviders.jsx'
 import LessonSession from './components/Sessions/LessonSession.jsx'
 import RegisterAccountPage from './user/pages/RegisterAccountPage.jsx';
 import VerifyCodePage from './user/pages/VerifyCodePage.jsx';
+import { Toaster } from 'react-hot-toast';
 
 
 function App() {
   return (
     <AppProviders>
+      <Toaster position="top-center" reverseOrder={false} />
     <BrowserRouter>
       <Routes>
         <Route path="/learn/session/:id" element={<LessonSession />} />

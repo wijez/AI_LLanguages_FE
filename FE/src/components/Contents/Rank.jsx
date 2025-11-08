@@ -18,7 +18,7 @@ function wsURL() {
   const fromEnv = import.meta?.env?.VITE_API_WS;
   if (fromEnv && fromEnv.startsWith("ws")) return fromEnv;
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  const host = import.meta?.env?.VITE_API_HOST || "localhost:8000";
+  const host = import.meta?.env?.VITE_API_HOST;
   return `${proto}://${host}/ws/leaderboard/`;
 }
 

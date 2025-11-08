@@ -10,5 +10,52 @@
   "cta": {
     "start": "始める",
     "login": "すでにアカウントをお持ちです"
+  },
+
+  "nav": {
+    "learn": "学習",
+    "pronunciation": "発音",
+    "practice": "練習",
+    "rank": "ランキング",
+    "tasks": "ミッション",
+    "shop": "ショップ",
+    "profile": "プロフィール",
+    "more": "もっと見る",
+    "addLanguage": "新しい言語を追加",
+    "newsfeed": "ニュースフィード"
+
+},
+"stats": {
+    "change_language": "言語を変更",
+    "no_enrollments": "コースがありません",
+    "streak_title": "連続日数",
+    "total_xp_title": "合計XP",
+    "lv": "レベル",
+    "xp": "XP",
+    "practiced": {
+      "today": "本日学習済み",
+      "yesterday": "昨日学習済み",
+      "daysAgo_one": "{{count}}日前に学習",
+      "daysAgo_other": "{{count}}日前に学習"
+    }
+  },
+  "daily": {
+    "title": "デイリークエスト",
+    "viewAll": "すべて表示"
+  },
+  "tournament": {
+    "title": "{{name}}",
+    "viewLeague": "リーグを見る",
+    "name": { "sapphire": "サファイア・リーグ" },
+    "you_ranked": "あなたは{{position}}位になりました",
+    "keep_top_n": "トップ{{n}}位を維持できるよう頑張りましょう！"
+  },
+  "links": {
+    "about": "概要",
+    "shop": "ショップ",
+    "effectiveness": "効果",
+    "jobs": "採用情報",
+    "investors": "投資家向け",
+    "terms": "利用規約"
   }
 }

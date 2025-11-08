@@ -1,41 +1,46 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import LanguageDropdown from '../../components/Dropdowns/LanguageDropdown';
-import LangFlag from '../../components/LangFlag.jsx';
-import Elephant from '../../assets/elephant.svg?url';
-import { api } from '../../api/api';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import LanguageDropdown from "../../components/Dropdowns/LanguageDropdown";
+import LangFlag from "../../components/LangFlag.jsx";
+import Elephant from "../../assets/elephant.svg?url";
+import { api } from "../../api/api";
 
 export default function SignupPage({ onSelect }) {
-  const { t, i18n } = useTranslation(['signup', 'common']);
+  const { t, i18n } = useTranslation(["signup", "common"]);
   const navigate = useNavigate();
 
-  const ui = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0];
-  const native = (localStorage.getItem('native_lang') || ui).split('-')[0];
+  const ui = (i18n.resolvedLanguage || i18n.language || "en").split("-")[0];
+  const native = (localStorage.getItem("native_lang") || ui).split("-")[0];
 
-  const l10n = t('signup:l10n', { returnObjects: true }) || {};
+  const l10n = t("signup:l10n", { returnObjects: true }) || {};
   const allCodes = Object.keys(l10n);
   const options = allCodes.filter((code) => code !== native);
 
   const nf = new Intl.NumberFormat(i18n.resolvedLanguage || i18n.language);
-  const isVi = ui === 'vi';
-  const learnersLabel = t('signup:learners');
+  const isVi = ui === "vi";
+  const learnersLabel = t("signup:learners");
   const fmtLearners = (n) => {
     if (n == null) return null;
-    if (n >= 1e6) return `${nf.format(n / 1e6)} ${isVi ? 'Tr' : 'M'} ${learnersLabel}`;
-    if (n >= 1e3) return `${nf.format(Math.round(n / 1e3))} ${isVi ? 'N' : 'K'} ${learnersLabel}`;
+    if (n >= 1e6)
+      return `${nf.format(n / 1e6)} ${isVi ? "Tr" : "M"} ${learnersLabel}`;
+    if (n >= 1e3)
+      return `${nf.format(Math.round(n / 1e3))} ${
+        isVi ? "N" : "K"
+      } ${learnersLabel}`;
     return `${nf.format(n)} ${learnersLabel}`;
   };
 
   const [busy, setBusy] = React.useState(false);
-  const [err, setErr] = React.useState('');
+  const [err, setErr] = React.useState("");
 
   const handleSelect = async (code) => {
     // ✅ đồng bộ với api.js: token key = 'access'
-    const access = typeof window !== 'undefined' ? localStorage.getItem('access') : null;
+    const access =
+      typeof window !== "undefined" ? localStorage.getItem("access") : null;
 
     // lưu ngôn ngữ để dùng lại sau login
-    localStorage.setItem('learn', code);
+    localStorage.setItem("learn", code);
 
     if (onSelect) return onSelect(code);
 
@@ -46,7 +51,7 @@ export default function SignupPage({ onSelect }) {
 
     try {
       setBusy(true);
-      setErr('');
+      setErr("");
 
       // tạo enrollment theo language_code
       let created = await api.Enrollments.create({ language_code: code });
@@ -67,22 +72,25 @@ export default function SignupPage({ onSelect }) {
       }
 
       if (enrollId) {
-        return navigate(`/signup/goal?enroll=${enrollId}&learn=${code}`);
+        return navigate(`/learn?language_code=${code}`);
       }
 
       // fallback cuối
-      return navigate(`/signup/goal?learn=${code}`);
+      return navigate(`/learn?language_code=${code}`);
     } catch (e) {
       // Nếu đã tồn tại → lấy enrollment cũ
       try {
-        const list = await api.Enrollments.list({ language_code: code, mine: 1 });
+        const list = await api.Enrollments.list({
+          language_code: code,
+          mine: 1,
+        });
         const item = Array.isArray(list) ? list[0] : list?.results?.[0];
         if (item?.id) {
-          return navigate(`/signup/goal?enroll=${item.id}&learn=${code}`);
+          return navigate(`/learn=${code}`);
         }
       } catch {}
-      setErr(e?.response?.data?.detail || 'Could not create enrollment');
-      return navigate(`/signup/goal?learn=${code}`);
+      setErr(e?.response?.data?.detail || "Could not create enrollment");
+      return navigate(`/learn=${code}`);
     } finally {
       setBusy(false);
     }
@@ -101,11 +109,11 @@ export default function SignupPage({ onSelect }) {
       {/* Title */}
       <div className="max-w-screen-lg mx-auto px-3 sm:px-4 mt-6 sm:mt-10 mb-2 sm:mb-3 text-center">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-700">
-          {t('signup:title')}
+          {t("signup:title")}
         </h1>
         {busy && (
           <div className="mt-2 text-sm text-slate-500">
-            {isVi ? 'Đang đăng ký...' : 'Creating enrollment...'}
+            {isVi ? "Đang đăng ký..." : "Creating enrollment..."}
           </div>
         )}
         {err && <div className="mt-2 text-sm text-rose-600">{err}</div>}
@@ -144,7 +152,9 @@ export default function SignupPage({ onSelect }) {
                   </div>
 
                   {learnersStr && (
-                    <div className="mt-1 text-slate-500 text-xs sm:text-sm">{learnersStr}</div>
+                    <div className="mt-1 text-slate-500 text-xs sm:text-sm">
+                      {learnersStr}
+                    </div>
                   )}
 
                   <span className="pointer-events-none absolute inset-0 rounded-2xl sm:rounded-3xl ring-0 ring-[#58cc02]/0 group-hover:ring-2 group-hover:ring-[#58cc02]/60 transition" />

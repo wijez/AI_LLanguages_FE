@@ -10,5 +10,50 @@
   "cta": {
     "start": "시작하기",
     "login": "이미 계정이 있습니다"
+  },
+  "nav": {
+    "learn": "학습",
+    "pronunciation": "발음",
+    "practice": "연습",
+    "rank": "랭킹",
+    "tasks": "미션",
+    "shop": "상점",
+    "profile": "프로필",
+    "more": "더보기",
+    "addLanguage": "새 언어 추가",
+    "newsfeed": "뉴스피드"
+  },
+  "stats": {
+    "change_language": "언어 변경",
+    "no_enrollments": "등록된 코스가 없습니다",
+    "streak_title": "연속 학습(일)",
+    "total_xp_title": "총 XP",
+    "lv": "레벨",
+    "xp": "XP",
+    "practiced": {
+      "today": "오늘 학습함",
+      "yesterday": "어제 학습함",
+      "daysAgo_one": "{{count}}일 전에 학습함",
+      "daysAgo_other": "{{count}}일 전에 학습함"
+    }
+  },
+  "daily": {
+    "title": "일일 퀘스트",
+    "viewAll": "전체 보기"
+  },
+  "tournament": {
+    "title": "{{name}}",
+    "viewLeague": "리그 보기",
+    "name": { "sapphire": "사파이어 리그" },
+    "you_ranked": "{{position}}위에 도달했습니다",
+    "keep_top_n": "상위 {{n}}위를 유지하도록 계속 힘내세요!"
+  },
+  "links": {
+    "about": "소개",
+    "shop": "상점",
+    "effectiveness": "효과",
+    "jobs": "채용",
+    "investors": "투자자",
+    "terms": "이용약관"
   }
 }

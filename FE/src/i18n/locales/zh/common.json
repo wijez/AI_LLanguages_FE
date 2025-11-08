@@ -10,5 +10,50 @@
   "cta": {
     "start": "开始学习",
     "login": "我已有账户"
+  },
+  "nav": {
+    "learn": "学习",
+    "pronunciation": "发音",
+    "practice": "练习",
+    "rank": "排行榜",
+    "tasks": "任务",
+    "shop": "商店",
+    "profile": "个人资料",
+    "more": "更多",
+    "addLanguage": "添加新语言",
+    "newsfeed": "动态"
+  },
+  "stats": {
+    "change_language": "切换语言",
+    "no_enrollments": "暂无课程",
+    "streak_title": "连续天数",
+    "total_xp_title": "总XP",
+    "lv": "等级",
+    "xp": "XP",
+    "practiced": {
+      "today": "今天已练习",
+      "yesterday": "昨天已练习",
+      "daysAgo_one": "{{count}}天前已练习",
+      "daysAgo_other": "{{count}}天前已练习"
+    }
+  },
+  "daily": {
+    "title": "每日任务",
+    "viewAll": "查看全部"
+  },
+  "tournament": {
+    "title": "{{name}}",
+    "viewLeague": "查看联赛",
+    "name": { "sapphire": "蓝宝石联赛" },
+    "you_ranked": "你已达到第{{position}}名",
+    "keep_top_n": "继续努力保持在前{{n}}名！"
+  },
+  "links": {
+    "about": "关于",
+    "shop": "商店",
+    "effectiveness": "效果",
+    "jobs": "工作",
+    "investors": "投资者",
+    "terms": "条款"
   }
 }

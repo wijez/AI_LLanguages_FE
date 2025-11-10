@@ -154,13 +154,10 @@ instance.interceptors.response.use(
         // Refresh fail → xoá token & chuyển login
         if (typeof window !== "undefined") {
           localStorage.removeItem("access");
-          localStorage.removeItem("refresh");
-          const next = encodeURIComponent(
-            window.location.pathname + window.location.search
-          );
-          window.location.href = `/login?next=${next}`;
+         localStorage.removeItem("refresh");
         }
-      }
+        throw err;
+        }
     }
 
     throw err;

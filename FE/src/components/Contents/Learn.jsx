@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback, useState } from "react";
 import TitleCard from "../Cards/TitleCard";
 import LessonCard from "../Cards/LessonCard";
-import { ChatWidget } from "../../chat/test";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import {
   hydrateLearn,
@@ -56,7 +55,9 @@ export default function Learn() {
       }
     };
     const onVisible = () => {
-      const v = (localStorage.getItem("learn") || "").split("-")[0].toLowerCase();
+      const v = (localStorage.getItem("learn") || "")
+        .split("-")[0]
+        .toLowerCase();
       if (v && v !== abbr) dispatch(setAbbr(v));
     };
     const onCustom = (e) => {
@@ -83,18 +84,22 @@ export default function Learn() {
   // Start session (offline-friendly)
   const handleStartSession = useCallback(
     async (lesson) => {
-
       if (lesson?.locked) {
         const req = Number(lesson?.required_pct ?? 80);
-        setStartMsg(`Bài này đang bị khóa. Cần đạt tối thiểu ${req}% ở bài trước.`);
-        setTimeout(() => setStartMsg(''), 3500);
+        setStartMsg(
+          `Bài này đang bị khóa. Cần đạt tối thiểu ${req}% ở bài trước.`
+        );
+        setTimeout(() => setStartMsg(""), 3500);
         return;
       }
       try {
-        const res = await dispatch(startLessonSession({ lessonId: lesson.id })).unwrap();
+        const res = await dispatch(
+          startLessonSession({ lessonId: lesson.id })
+        ).unwrap();
         navigate(`/learn/session/${res.id}`);
       } catch (e) {
-        const detail = e?.detail || e?.message || 'Không thể tạo phiên học lúc này.';
+        const detail =
+          e?.detail || e?.message || "Không thể tạo phiên học lúc này.";
         setStartMsg(detail);
         setTimeout(() => setStartMsg(""), 3500);
         if (DEBUG) console.error("[Learn] start session error:", e);
@@ -119,15 +124,14 @@ export default function Learn() {
 
   return (
     <div className="relative p-8 w-full max-w-[1100px] mx-auto min-h-[calc(100vh-0px)]">
-      
-
       {/* Trạng thái */}
       {status === "refreshing" && (
         <div className="mt-2 text-slate-500 text-sm">Đang cập nhật chủ đề…</div>
       )}
       {offline && (
         <div className="mt-2 text-sm rounded-lg border border-amber-200 bg-amber-50 text-amber-800 p-3">
-          Hiển thị dữ liệu từ bộ nhớ tạm (offline). Hệ thống sẽ tự thử đồng bộ lại.
+          Hiển thị dữ liệu từ bộ nhớ tạm (offline). Hệ thống sẽ tự thử đồng bộ
+          lại.
         </div>
       )}
       {!offline && err && (
@@ -146,7 +150,10 @@ export default function Learn() {
         {topics.map((t) => {
           const isOpen = expanded.has(t.id);
           return (
-            <section key={t.id} className="rounded-2xl border border-gray-200 bg-white">
+            <section
+              key={t.id}
+              className="rounded-2xl border border-gray-200 bg-white"
+            >
               {/* Title của từng topic */}
               <div className="p-4">
                 <TitleCard
@@ -178,11 +185,11 @@ export default function Learn() {
         })}
 
         {!topics.length && (
-          <div className="text-sm text-slate-500">Chưa có chủ đề cho ngôn ngữ này.</div>
+          <div className="text-sm text-slate-500">
+            Chưa có chủ đề cho ngôn ngữ này.
+          </div>
         )}
       </div>
-
-      <ChatWidget />
     </div>
   );
 }

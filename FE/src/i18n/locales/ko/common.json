@@ -21,7 +21,13 @@
     "profile": "프로필",
     "more": "더보기",
     "addLanguage": "새 언어 추가",
-    "newsfeed": "뉴스피드"
+    "newsfeed": "뉴스피드",
+    "setting": "설정",
+    "logout": "로그아웃",
+
+    "logoutConfirmTitle": "로그아웃 확인",
+    "logoutConfirmMessage": "Aivory에서 정말 로그아웃하시겠습니까?",
+    "cancel": "취소"
   },
   "stats": {
     "change_language": "언어 변경",

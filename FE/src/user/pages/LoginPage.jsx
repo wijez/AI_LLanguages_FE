@@ -2,9 +2,12 @@ import React, { useState } from "react";
 import { api } from "../../api/api";
 import Spinner from "../../components/Spinner";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../store/sessionSlice";
 
 /**
- * LoginPage – Duolingo-style login screen
+ * LoginPage -style login screen
  *
  * Props (tùy chọn):
  *  - onSuccess: (payload) => void – callback khi login thành công
@@ -17,6 +20,9 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const canSubmit =
     identifier.trim().length > 0 && password.length >= 1 && !loading;
@@ -38,10 +44,13 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
         data?.tokens?.access ?? data?.access ?? data?.token ?? null;
       const refresh = data?.tokens?.refresh ?? data?.refresh ?? null;
 
-      if (access) localStorage.setItem("access", access);
-      if (refresh) localStorage.setItem("refresh", refresh);
+      const user = data?.user ?? data;
 
-      // Ưu tiên ?next=... trên URL nếu có
+      dispatch(loginSuccess({
+        user: user,
+        tokens: { access, refresh }
+      }));
+
       const nextFromQuery =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next")
@@ -50,7 +59,7 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
       if (onSuccess) {
         onSuccess(data);
       } else {
-        window.location.href = nextFromQuery || onRedirect || "/";
+        navigate(nextFromQuery || onRedirect || "/", { replace: true });
       }
     } catch (err) {
       const msg =

@@ -21,7 +21,13 @@
     "profile": "个人资料",
     "more": "更多",
     "addLanguage": "添加新语言",
-    "newsfeed": "动态"
+    "newsfeed": "动态",
+    "setting": "设置",
+    "logout": "退出",
+
+    "logoutConfirmTitle": "确认退出",
+    "logoutConfirmMessage": "您确定要退出 Aivory 吗？",
+    "cancel": "取消"
   },
   "stats": {
     "change_language": "切换语言",

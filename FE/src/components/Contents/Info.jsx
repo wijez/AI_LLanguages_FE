@@ -1,7 +1,7 @@
-import { useEffect} from "react";
+import { useEffect } from "react";
 import InfoCard from "../Cards/InfoCard";
 // import { api } from "../../api/api";
-import { fetchMeSafe, hydrateFromCache } from "../../store/sessionSlice";
+import { fetchMeSafe } from "../../store/sessionSlice";
 import { selectUserView } from "../../store/selectors";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 
@@ -27,17 +27,26 @@ function fmt(iso) {
 export default function Info() {
   const dispatch = useDispatch();
   const user = useSelector(selectUserView, shallowEqual);
-  const { offline, status } = useSelector(
+  const { offline, status, lastSync } = useSelector(
     (s) => ({
       offline: s.session.offline,
       status: s.session.status,
+      lastSync: s.session.lastSync,
     }),
     shallowEqual
   );
 
+  // Chỉ fetch khi chưa có user hoặc dữ liệu đã "stale"
   useEffect(() => {
-    dispatch(hydrateFromCache()).then(() => dispatch(fetchMeSafe()));
-  }, [dispatch]);
+    const STALE_MS = 5 * 60 * 1000; // 5 phút
+    if (!user) {
+      dispatch(fetchMeSafe());
+      return;
+    }
+    if (!offline && (!lastSync || Date.now() - lastSync > STALE_MS)) {
+      dispatch(fetchMeSafe());
+    }
+  }, [dispatch, user, lastSync, offline]);
 
   useEffect(() => {
     if (!offline) return;
@@ -47,7 +56,7 @@ export default function Info() {
 
   if (
     !user &&
-    (status === "loading" || status === "refreshing" || status === "idle")
+    (status === "loading" || status === "refreshing")
   ) {
     return <div className="text-gray-500">Loading…</div>;
   }

@@ -1,7 +1,11 @@
 {
   "lang": {
     "display": "{{name}}",
-    "vi": "Tiếng Việt", "en": "Tiếng Anh", "zh": "Tiếng Hoa", "ja": "Tiếng Nhật", "ko": "Tiếng Hàn"
+    "vi": "Tiếng Việt",
+    "en": "Tiếng Anh",
+    "zh": "Tiếng Hoa",
+    "ja": "Tiếng Nhật",
+    "ko": "Tiếng Hàn"
   },
   "cta": { "start": "BẮT ĐẦU", "login": "TÔI ĐÃ CÓ TÀI KHOẢN" },
   "nav": {
@@ -14,7 +18,13 @@
     "profile": "Hồ sơ",
     "more": "Xem thêm",
     "addLanguage": "Đăng ký ngôn ngữ mới",
-    "newsfeed": "Bảng tin"
+    "newsfeed": "Bảng tin",
+    "setting": "Cài đặt",
+    "logout": "Đăng xuất",
+
+    "logoutConfirmTitle": "Xác nhận Đăng xuất",
+    "logoutConfirmMessage": "Bạn có chắc chắn muốn đăng xuất khỏi Aivory không?",
+    "cancel": "Hủy bỏ"
   },
   "stats": {
     "change_language": "Đổi ngôn ngữ",

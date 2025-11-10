@@ -22,10 +22,15 @@
     "profile": "プロフィール",
     "more": "もっと見る",
     "addLanguage": "新しい言語を追加",
-    "newsfeed": "ニュースフィード"
+    "newsfeed": "ニュースフィード",
+    "setting": "設定",
+    "logout": "ログアウト",
 
-},
-"stats": {
+    "logoutConfirmTitle": "ログアウトの確認",
+    "logoutConfirmMessage": "本当にAivoryからログアウトしますか？",
+    "cancel": "キャンセル"
+  },
+  "stats": {
     "change_language": "言語を変更",
     "no_enrollments": "コースがありません",
     "streak_title": "連続日数",

@@ -19,7 +19,13 @@
     "profile": "Profile",
     "more": "More",
     "addLanguage": "Add New Language",
-    "newsfeed": "Newsfeed"
+    "newsfeed": "Newsfeed",
+    "logout": "Logout",
+    "setting": "Setting",
+
+    "logoutConfirmTitle": "Confirm Logout",
+    "logoutConfirmMessage": "Are you sure you want to log out of Aivory?",
+    "cancel": "Cancel"
   },
   "stats": {
     "change_language": "Change language",

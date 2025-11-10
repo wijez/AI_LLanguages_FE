@@ -32,3 +32,5 @@ export const SpeechPage = lazy(() => import('./user/pages/SpeechPage.jsx'));
 export const ShopPage = lazy(() => import('./user/pages/ShopPage.jsx'));
 export const SignupPage = lazy(() => import('./user/pages/SignUpPage.jsx'));
 export const LoginPage = lazy(() => import('./user/pages/LoginPage.jsx'));
+export const NotFound404 = lazy(() => import('./components/NotFound404.jsx'))
+export const ForbiddenPage = lazy(() => import('./user/pages/ForbiddenPage.jsx'))

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Trophy, Users, Loader2 } from "lucide-react";
 import { api } from "../../api/api";
 
-// ========================= Helpers =========================
 const clsx = (...xs) => xs.filter(Boolean).join(" ");
 
 function buildUrl({ friendsOnly = false, limit = 50 }) {
@@ -10,7 +9,7 @@ function buildUrl({ friendsOnly = false, limit = 50 }) {
   params.set("scope", "all");
   params.set("limit", String(limit));
   if (friendsOnly) params.set("friends_only", "1");
-  return `/leaderboard?${params.toString()}`; // giữ nguyên như bạn đang dùng
+  return `/leaderboard?${params.toString()}`;
 }
 
 // Ưu tiên ENV: VITE_API_WS (vd: ws://localhost:8000/ws/leaderboard/)
@@ -22,15 +21,6 @@ function wsURL() {
   return `${proto}://${host}/ws/leaderboard/`;
 }
 
-// Chuẩn hoá mọi kiểu data về mảng
-function toRows(d) {
-  if (Array.isArray(d)) return d;
-  if (d && Array.isArray(d.results)) return d.results;
-  if (d && Array.isArray(d.data)) return d.data;
-  return [];
-}
-
-// ========================= UI Bits =========================
 function SectionCard({ title, icon, right, children }) {
   const Icon = icon;
   return (

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { api } from "../../api/api";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../store/sessionSlice";
 
 /**
  * Trang nhập mã xác thực 6 số
@@ -10,6 +12,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 export default function VerifyCodePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const dispatch = useDispatch(); 
 
   // [SỬA 2] Lấy cả username và email từ URL
   // Trang RegisterPage phải chuyển hướng đến /verify?username=user01&email=user@example.com
@@ -87,15 +90,15 @@ export default function VerifyCodePage() {
         verify_code: fullCode, // Gửi verify_code
       });
 
-      // Xác thực thành công, API trả về token
       const access = data?.tokens?.access ?? data?.access ?? null;
       const refresh = data?.tokens?.refresh ?? data?.refresh ?? null;
+      const user = data?.user ?? data;
+      dispatch(loginSuccess({
+        user: user,
+        tokens: { access, refresh }
+      }));
 
-      if (access) localStorage.setItem("access", access);
-      if (refresh) localStorage.setItem("refresh", refresh);
-
-      // Chuyển hướng đến trang chính
-      window.location.href = "/";
+     navigate("/learn", { replace: true });
     } catch (err) {
       const msg =
         err?.response?.data?.detail ||
@@ -123,7 +126,7 @@ export default function VerifyCodePage() {
       await api.UsersApp.post("resend-verify-code/", { email });
       setSuccess("Đã gửi lại mã xác thực. Vui lòng kiểm tra email.");
     } catch (err) {
-      setError("Không thể gửi lại mã. Vui lòng thử lại sau.");
+      setError("Không thể gửi lại mã. Vui lòng thử lại sau.", err);
     } finally {
       setLoading(false);
     }

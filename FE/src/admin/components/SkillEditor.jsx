@@ -301,6 +301,7 @@ export default function SkillEditor() {
         getRowId={(r) => r.id}
         columns={[
           { field: 'question_text', headerName: 'Question', flex: 1, minWidth: 280 },
+          {field: 'question_text_i18n', headerName: 'Question_i18n', flex:1.5, minWidth: 280},
           {
             field: 'choices',
             headerName: 'Choices',

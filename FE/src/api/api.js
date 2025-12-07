@@ -6,12 +6,13 @@ const BASE_URL = (() => {
   if (typeof window !== "undefined") {
     return `${window.location.origin.replace(/\/$/, "")}/api`; // dùng cùng origin nếu đã cấu hình proxy /api trên Vercel
   }
-  throw new Error("VITE_API_URL is not set and window is undefined (SSR). Set VITE_API_URL in env.");
+  throw new Error(
+    "VITE_API_URL is not set and window is undefined (SSR). Set VITE_API_URL in env."
+  );
 })();
 
-
 const TIMEOUT = Number(import.meta.env.VITE_API_TIMEOUT || 20000);
-const REFRESH_URL = new URL("/users/token/refresh/", BASE_URL).toString();
+const REFRESH_URL = `${BASE_URL.replace(/\/$/, "")}/users/token/refresh/`;
 
 // Bật log khi: chế độ dev, VITE_DEBUG_API=1, hoặc localStorage.debug_api=1
 const DEBUG =
@@ -25,14 +26,13 @@ const DEBUG =
 const instance = axios.create({
   baseURL: BASE_URL,
   timeout: TIMEOUT,
-  withCredentials: false, 
+  withCredentials: false,
 });
-
 
 /* =========================================================
  *  REQUEST INTERCEPTOR (JWT + i18n + debug log)
  * =======================================================*/
- instance.interceptors.request.use((cfg) => {
+instance.interceptors.request.use((cfg) => {
   cfg.headers = cfg.headers || {};
 
   // Chỉ bypass interstitial khi gọi ngrok
@@ -74,7 +74,6 @@ const instance = axios.create({
   return cfg;
 });
 
-
 /* =========================================================
  *  REFRESH TOKEN HELPER
  * =======================================================*/
@@ -95,7 +94,9 @@ async function refreshAccessToken() {
       if (typeof window !== "undefined") {
         // đảm bảo đồng bộ key
         localStorage.setItem("access", token);
+        if (data?.refresh) localStorage.setItem("refresh", data.refresh);
       }
+      instance.defaults.headers.common.Authorization = `Bearer ${token}`;
       return token;
     })
     .finally(() => {
@@ -108,6 +109,63 @@ async function refreshAccessToken() {
 /* =========================================================
  *  RESPONSE INTERCEPTOR (debug log + auto refresh 401)
  * =======================================================*/
+// instance.interceptors.response.use(
+//   (res) => {
+//     if (DEBUG) {
+//       console.groupCollapsed(
+//         `%c[API] ← ${res.status} ${res.config?.url}`,
+//         "color:#10b981;font-weight:700"
+//       );
+//       console.log("Data:", res.data);
+//       console.groupEnd();
+//     }
+//     return res;
+//   },
+//   async (err) => {
+//     const { config, response } = err || {};
+//     const status = response?.status;
+//     const reqUrl = response?.config?.url || config?.url || "";
+
+//     if (DEBUG) {
+//       console.group("%c[API ERROR]", "color:#ef4444;font-weight:700");
+//       console.error(err);
+//       if (response) {
+//         console.log("Status :", status);
+//         console.log("URL    :", reqUrl);
+//         console.log("Params :", response.config?.params);
+//         console.log("Data   :", response.data);
+//       }
+//       console.groupEnd();
+//     }
+
+//     // Tránh lặp khi chính call refresh bị 401
+//     const isRefreshCall = (reqUrl || "").includes("/users/token/refresh/");
+
+//     // Auto refresh 1 lần khi 401 (trừ refresh endpoint)
+//     if (status === 401 && !config?.__isRetry && !isRefreshCall) {
+//       try {
+//         const newAccess = await refreshAccessToken();
+//         const retryCfg = { ...config, __isRetry: true };
+//         retryCfg.headers = {
+//           ...(retryCfg.headers || {}),
+//           Authorization: `Bearer ${newAccess}`,
+//         };
+//         return instance(retryCfg);
+//       } catch (e) {
+//         const s = e?.response?.status;
+//         if (s === 400 || s === 401) {
+//           if (typeof window !== "undefined") {
+//             localStorage.removeItem("access");
+//             localStorage.removeItem("refresh");
+//           }
+//         }
+//         throw e;
+//       }
+//     }
+
+//     throw err;
+//   }
+// );
 instance.interceptors.response.use(
   (res) => {
     if (DEBUG) {
@@ -150,20 +208,21 @@ instance.interceptors.response.use(
           Authorization: `Bearer ${newAccess}`,
         };
         return instance(retryCfg);
-      } catch {
-        // Refresh fail → xoá token & chuyển login
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("access");
-         localStorage.removeItem("refresh");
+      } catch (e) {
+        const s = e?.response?.status;
+        if (s === 400 || s === 401) {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("access");
+            localStorage.removeItem("refresh");
+          }
         }
-        throw err;
-        }
+        throw e;
+      }
     }
 
     throw err;
   }
 );
-
 /* =========================================================
  *  TIỆN ÍCH CƠ BẢN
  * =======================================================*/
@@ -297,6 +356,16 @@ const Resources = {
   Friends: crud("/friends/"),
   CalendarEvents: crud("/calendar-events/"),
   LeaderboardEntries: crud("/leaderboard-entries/"),
+
+  // Badges
+  Badges: crud("/badges/"),
+  MyBadges: crud("/my-badges/"),
+  Practice: {
+    overview: (params = {}, cfg) =>
+      instance
+        .get(`/practice/overview`, { params, ...(cfg || {}) })
+        .then(unwrap),
+  },
 };
 
 /* =========================================================
@@ -313,6 +382,22 @@ const Pron = scope("/pron/");
 
 // path("api/", include("speech.urls")) → gắn thẳng /api/
 const Speech = scope("/");
+
+const SpeechPron = {
+  up: (formData, cfg) =>
+    instance.post("/speech/pron/up/", formData, cfg).then(unwrap),
+  // nếu cần gọi TTS dạng GET:
+  tts: ({ text, lang }) =>
+    getCached(
+      "/speech/tts",
+      { params: { text, lang } },
+      { ttl: 0 } // luôn lấy tươi
+    ).then(unwrap),
+  ttsPrompt: (promptId, lang, cfg) =>
+    instance
+      .post("/speech/pron/tts/", { prompt_id: promptId, lang }, cfg)
+      .then(unwrap),
+};
 
 /* =========================================================
  *  TOOLS / UTILITIES
@@ -339,6 +424,26 @@ Resources.Lessons = {
       .post(`/lessons/${lessonId}/add-skill/`, payload, cfg)
       .then(unwrap)
       .finally(invalidateAll),
+  // Gắn skill đã tồn tại vào lesson
+  attachSkill: (lessonId, payload, cfg) =>
+    instance
+      .post(`/lessons/${lessonId}/attach-skill/`, payload, cfg)
+      .then(unwrap)
+      .finally(invalidateAll),
+
+  // Gỡ skill khỏi lesson
+  removeSkill: (lessonId, payload, cfg) =>
+    instance
+      .post(`/lessons/${lessonId}/remove-skill/`, payload, cfg)
+      .then(unwrap)
+      .finally(invalidateAll),
+
+  // Cập nhật order của các skill trong lesson
+  reorderSkills: (lessonId, payload, cfg) =>
+    instance
+      .post(`/lessons/${lessonId}/reorder-skills/`, payload, cfg)
+      .then(unwrap)
+      .finally(invalidateAll),
 };
 
 /* =========================================================
@@ -358,6 +463,9 @@ Resources.Skills = {
       .then(unwrap)
       .finally(invalidateAll),
 
+  lessons: (skillId, params = {}, opts) =>
+    getCached(`/skills/${skillId}/lessons/`, { params }, opts).then(unwrap),
+
   // GET skill theo lesson (ưu tiên subroute; fallback query param)
   byLesson: async ({ lesson, ...params } = {}, opts) => {
     try {
@@ -375,6 +483,23 @@ Resources.Skills = {
     }
   },
 };
+
+
+Resources.Friends = {
+  ...Resources.Friends,
+  accept: (id, payload = {}, cfg) =>
+    instance
+      .post(`/friends/${id}/accept/`, payload, cfg)
+      .then(unwrap)
+      .finally(invalidateAll),
+
+  // POST /api/friends/:id/cancel/
+  cancel: (id, payload = {}, cfg) =>
+    instance
+      .post(`/friends/${id}/cancel/`, payload, cfg)
+      .then(unwrap)
+      .finally(invalidateAll),
+}
 
 /* =========================================================
  *  EXTEND: Topics
@@ -428,7 +553,31 @@ Resources.LearningSessions = {
   cancel: (id, payload, cfg) =>
     instance
       .post(`/learning/sessions/${id}/cancel/`, payload, cfg)
-      .then(unwrap),
+      .then(unwrap)
+      .finally(invalidateAll),
+};
+
+/* =========================================================
+ *  SkillSessions (theo Skill, phục vụ PronAttempt history)
+ * =======================================================*/
+Resources.SkillSessions = {
+  ...crud("/skill_sessions/"),
+
+  // POST /api/skill_sessions/start/
+  start: (payload, cfg) =>
+    instance.post("/skill_sessions/start/", payload, cfg).then(unwrap),
+
+  // POST /api/skill_sessions/:id/complete/
+  complete: (id, payload = {}, cfg) =>
+    instance.post(`/skill_sessions/${id}/complete/`, payload, cfg).then(unwrap),
+
+  // POST /api/skill_sessions/:id/cancel/
+  cancel: (id, payload = {}, cfg) =>
+    instance.post(`/skill_sessions/${id}/cancel/`, payload, cfg).then(unwrap),
+
+  // GET /api/skill_sessions/:id/attempts/
+  attempts: (id, params = {}, opts) =>
+    getCached(`/skill_sessions/${id}/attempts/`, { params }, opts).then(unwrap),
 };
 
 /* =========================================================
@@ -446,6 +595,17 @@ Resources.Enrollments = {
       .post("/enrollments/", { abbreviation: abbr, ...payload }, cfg)
       .then(unwrap)
       .finally(invalidateAll),
+
+  findByAbbr: (abbr, opts) =>
+    getCached("/enrollments/", { params: { abbreviation: abbr } }, opts).then(
+      unwrap
+    ),
+  findByLangCode: (code, opts) =>
+    getCached("/enrollments/", { params: { language_code: code } }, opts).then(
+      unwrap
+    ),
+  findByCodeAlias: (code, opts) =>
+    getCached("/enrollments/", { params: { code } }, opts).then(unwrap),
 };
 /* =========================================================
  *  EXTEND: Users
@@ -499,6 +659,7 @@ export const api = {
   Chat,
   Pron,
   Speech,
+  SpeechPron,
 
   // tools
   exportChatTraining,

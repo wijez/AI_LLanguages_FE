@@ -66,13 +66,38 @@ export default function ResourceTable({
     try {
       const params = {};
       if (debounced) params[searchParam] = debounced;   // ← SEARCH param
-      const data = await api.get(resource, { params }, { ttl: 0 });
-      const items = Array.isArray(data?.results)
-        ? data.results
-        : Array.isArray(data)
-        ? data
-        : [];
-      setRows(items);
+
+      let all = [];
+      let url = resource;
+      let first = true;
+
+      // Loop qua tất cả các trang nếu response dạng DRF pagination
+      // { count, next, previous, results: [...] }
+      while (true) {
+        const res = await api.get(
+          url,
+          first ? { params } : {},   // chỉ truyền params cho request đầu
+          { ttl: 0 }
+        );
+
+        if (Array.isArray(res?.results)) {
+          // DRF PageNumberPagination
+          all = all.concat(res.results);
+        } else if (Array.isArray(res)) {
+          // Endpoint không phân trang → gán luôn rồi thoát
+          all = res;
+          break;
+        } else {
+          // Format không mong đợi → thoát
+          break;
+        }
+
+        if (!res.next) break;
+        url = res.next;   // res.next là URL đầy đủ ?page=2,3,...
+        first = false;
+      }
+
+      setRows(all);
       setToast({ msg: "", type: "info" });
     } catch (err) {
       setToast({
@@ -85,6 +110,7 @@ export default function ResourceTable({
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     load();
@@ -274,7 +300,7 @@ export default function ResourceTable({
           ]}
           loading={loading}
           getRowId={(r) => r[rowIdKey]}
-          pageSizeOptions={[10, 25, 50]}
+          pageSizeOptions={[10, 25, 50, 100,200, 500, 1000]}
           initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
           disableRowSelectionOnClick
         />

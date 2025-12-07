@@ -4,7 +4,7 @@ import Spinner from "../../components/Spinner";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginSuccess } from "../../store/sessionSlice";
+import { loginSuccess, fetchMeSafe } from "../../store/sessionSlice";
 
 /**
  * LoginPage -style login screen
@@ -43,14 +43,24 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
       const access =
         data?.tokens?.access ?? data?.access ?? data?.token ?? null;
       const refresh = data?.tokens?.refresh ?? data?.refresh ?? null;
-
       const user = data?.user ?? data;
 
-      dispatch(loginSuccess({
-        user: user,
-        tokens: { access, refresh }
-      }));
+      // 1) Lưu token + cache user ngay lập tức
+      dispatch(
+        loginSuccess({
+          user: user,
+          tokens: { access, refresh },
+        })
+      );
 
+      // 2) GỌI /me ngay để chắc chắn Redux có user đầy đủ trước khi điều hướng
+      try {
+        await dispatch(fetchMeSafe()).unwrap();
+      } catch {
+        // ignore - có thể offline, vẫn có cache từ loginSuccess
+      }
+
+      // 3) Điều hướng: ưu tiên ?next, sau đó onRedirect
       const nextFromQuery =
         typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("next")
@@ -93,16 +103,14 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.06)] px-8 py-10">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-6">
-            <div /> {/* placeholder để cân trái */}
+            <div />
             <div className="justify-self-center">
               {logo ?? (
-                <h1 className="text-2xl font-extrabold tracking-tight">
-                  LOGIN
-                </h1>
+                <h1 className="text-2xl font-extrabold tracking-tight">LOGIN</h1>
               )}
             </div>
             <a
-              href="/register"
+              href="/signup"
               className="justify-self-end ml-4 text-sm font-semibold text-sky-600 hover:text-sky-700 border rounded-full px-4 py-2 shadow-sm"
             >
               ĐĂNG KÝ
@@ -156,8 +164,7 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
                   : "bg-sky-300 cursor-not-allowed")
               }
             >
-              ĐĂNG NHẬP
-              {loading && <Spinner />}
+              {loading ? "ĐANG ĐĂNG NHẬP…" : "ĐĂNG NHẬP"}
             </button>
           </form>
 
@@ -190,11 +197,10 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
           <p className="mt-6 text-xs text-center text-gray-500 leading-relaxed">
             Khi đăng ký trên nền tảng, bạn đã đồng ý với{" "}
             <span className="font-semibold">Các chính sách</span> và
-            <span className="font-semibold"> Chính sách bảo mật</span> của chúng
-            tôi. Trang này được bảo vệ bởi reCAPTCHA Enterprise và áp dụng{" "}
+            <span className="font-semibold"> Chính sách bảo mật</span> của chúng tôi.
+            Trang này được bảo vệ bởi reCAPTCHA Enterprise và áp dụng{" "}
             <span className="font-semibold">Chính sách bảo mật</span> và
-            <span className="font-semibold"> Điều khoản dịch vụ</span> của
-            Google.
+            <span className="font-semibold"> Điều khoản dịch vụ</span> của Google.
           </p>
         </div>
       </div>

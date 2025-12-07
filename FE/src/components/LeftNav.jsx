@@ -12,6 +12,7 @@ import {
   Newspaper,
   Settings,
   LogOutIcon,
+  Search,
 } from "lucide-react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,8 @@ import Elephant from "../assets/elephant.svg?url";
 import { logout } from "../store/sessionSlice";
 import { useDispatch } from "react-redux";
 import ConfirmDialog from "../components/ConfirmDialog";
+import "../index.css";
+
 
 export default function LeftNav() {
   const location = useLocation();
@@ -50,6 +53,7 @@ export default function LeftNav() {
         { icon: Newspaper, i18nKey: "nav.newsfeed", path: "/newsfeed" },
         { icon: Settings, i18nKey: "nav.setting", path: "/setting" },
         { icon: LogOutIcon, i18nKey: "nav.logout", id: "logout" },
+        { icon: Search, i18nKey: "nav.friend", path: "/find-friends"},
       ],
     },
   ];
@@ -77,7 +81,7 @@ export default function LeftNav() {
   };
 
   return (
-    <div className="w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto sticky top-0">
+    <div className="  w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto  scrollbar-hide sticky top-0">
       <div className="mb-8">
         <Link to="/learn">
           <h1 className="flex items-center gap-3 text-3xl font-bold text-green-500 cursor-pointer hover:text-green-600 transition-colors">

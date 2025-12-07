@@ -19,6 +19,7 @@ export const More = lazy(() => import('./components/Contents/More.jsx'));
 export const Speech = lazy(() => import('./components/Contents/Speech.jsx'));
 // export const Exercise = lazy(() => import('./components/Contents/Exercise.jsx'));
 export const Shop = lazy(() => import('./components/Contents/Shop.jsx'));
+export const Friend = lazy(()=> import('./components/Contents/Friend.jsx'));
 
 // Pages
 export const LandingPage = lazy(() => import('./user/pages/LandingPage.jsx'));

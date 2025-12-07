@@ -36,13 +36,25 @@ import ChatRounded from "@mui/icons-material/ChatRounded";
 import Dashboard from "./components/Dashboard";
 import ResourceTable from "./components/ResourceTable";
 import TopicDetail from "./components/TopicDetail";
-import SkillsPage from "./pages/SkillsPage";
 import SkillDetail from "./pages/SkillDetail";
 import SkillEditor from "./components/SkillEditor";
 import RoleplayDetail from "./components/RoleplayDetail";
 import RolePlayBlockDetails from "./components/RolePlayBlockDetails";
 
 const drawerWidth = 240;
+
+// chuẩn enum type theo models.Skill.SkillType
+const SKILL_TYPE_OPTIONS = [
+  { value: "listening", label: "Listening" },
+  { value: "speaking", label: "Speaking" },
+  { value: "reading", label: "Reading" },
+  { value: "writing", label: "Writing" },
+  { value: "matching", label: "Matching" },
+  { value: "fillgap", label: "Fill in the blanks" },
+  { value: "ordering", label: "Reorder words" },
+  { value: "quiz", label: "Generic MCQ/QA" },
+  { value: "pron", label: "Pronunciation" },
+];
 
 const Shell = () => {
   const theme = useTheme();
@@ -95,6 +107,12 @@ const Shell = () => {
           <ListItemButton>
             <ChatRounded />
             <ListItemText sx={{ ml: 1 }} primary="RolePlay" />
+          </ListItemButton>
+        </Link>
+        <Link to="/admin/skills">
+          <ListItemButton>
+            <ExtensionRounded />
+            <ListItemText sx={{ ml: 1 }} primary="Skills" />
           </ListItemButton>
         </Link>
       </List>
@@ -176,7 +194,7 @@ function TopicsTableWrapper({ columns }) {
         { name: "order", label: "Order", type: "number", required: true },
         { name: "golden", label: "Golden (true/false)" },
       ]}
-      onViewRow={(row) => navigate(`/admin/topics/${row.id}`)} // ✅ nút View
+      onViewRow={(row) => navigate(`/admin/topics/${row.id}`)}
     />
   );
 }
@@ -190,6 +208,74 @@ function RoleplayTableWrapper({ columns }) {
       columns={columns}
       form={[]}
       onViewRow={(row) => navigate(`/admin/roleplay/${row.id}`)}
+    />
+  );
+}
+
+function SkillsTableWrapper({ columns }) {
+  const navigate = useNavigate();
+  return (
+    <ResourceTable
+      title="Skills"
+      resource="/skills/" // 👉 lấy full /api/skills/, không truyền type
+      columns={columns}
+      form={[
+        { name: "title", label: "Title", required: true },
+        {
+          name: "type",
+          label: "Type",
+          type: "select",
+          required: true,
+          options: SKILL_TYPE_OPTIONS,
+        },
+        {
+          name: "language_code",
+          label: "Language code",
+          required: true,
+          helperText: "vd: en, vi, ja",
+        },
+        {
+          name: "xp_reward",
+          label: "XP Reward",
+          type: "number",
+          required: true,
+        },
+        {
+          name: "duration_seconds",
+          label: "Duration (seconds)",
+          type: "number",
+          required: true,
+        },
+        {
+          name: "difficulty",
+          label: "Difficulty",
+          type: "number",
+          required: true,
+          helperText: "mức 1–5 hoặc tuỳ phân cấp",
+        },
+        {
+          name: "tags",
+          label: "Tags (CSV)",
+          helperText: "vd: A1,greetings,roleplay",
+        },
+        {
+          name: "is_active",
+          label: "Active",
+          type: "boolean",
+        },
+      ]}
+      transformPayload={(payload) => {
+        // convert tags CSV -> array JSON
+        if (typeof payload.tags === "string") {
+          payload.tags = payload.tags
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        return payload;
+      }}
+      onViewRow={(row) => navigate(`/admin/skill/${row.id}`)}
+      searchPlaceholder="Search skills..."
     />
   );
 }
@@ -228,6 +314,25 @@ export default function AppAdmin() {
       { field: "title", headerName: "Title", width: 250 },
       { field: "level", headerName: "Level", width: 100 },
       { field: "is_active", headerName: "Active", type: "boolean" },
+    ],
+    skills: [
+      { field: "id", headerName: "ID", width: 70 },
+      { field: "title", headerName: "Title", width: 240 },
+      { field: "type", headerName: "Type", width: 120 },
+      { field: "language_code", headerName: "Lang", width: 100 },
+      { field: "xp_reward", headerName: "XP", width: 90, type: "number" },
+      {
+        field: "difficulty",
+        headerName: "Diff",
+        width: 90,
+        type: "number",
+      },
+      {
+        field: "is_active",
+        headerName: "Active",
+        width: 90,
+        type: "boolean",
+      },
     ],
   };
 
@@ -291,6 +396,11 @@ export default function AppAdmin() {
         />
         <Route path="topics/:id" element={<TopicDetail />} />
 
+        {/* Skills list + detail / editor */}
+        <Route
+          path="skills"
+          element={<SkillsTableWrapper columns={columns.skills} />}
+        />
         <Route path="skill/:id" element={<SkillDetail />} />
         <Route path="skill/:id/edit" element={<SkillEditor />} />
 

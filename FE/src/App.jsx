@@ -33,10 +33,10 @@ import { Toaster } from "react-hot-toast";
 import { ChatWidget } from "./components/chat/ChatWidget.jsx";
 import RoleplayChatDemo from "./components/chat/test.jsx";
 import { hydrateFromCache, fetchMeSafe } from "./store/sessionSlice";
- import RouteGuard from "./components/RouteGuard.jsx";
+import RouteGuard from "./components/RouteGuard.jsx";
+import FriendPage from "./user/pages/FriendPage.jsx";
 
 const EXCLUDED_PATHS = [
-  "/",
   "/admin",
   "/signup",
   "/register",
@@ -95,6 +95,7 @@ function App() {
               <Route path="/verify" element={<VerifyCodePage />} />
             </Route>
             <Route element={<RouteGuard mode="user" />}>
+              <Route path="/register" element={<SignupPage />} />
               <Route path="/learn/session/:id" element={<LessonSession />} />
               <Route path="/learn" element={<LearnPage />} />
               <Route path="/speech" element={<SpeechPage />} />
@@ -104,6 +105,7 @@ function App() {
               <Route path="/shop" element={<ShopPage />} />
               <Route path="/profile" element={<InfoPage />} />
               <Route path="/more" element={<MorePage />} />
+              <Route path="find-friends" element={<FriendPage/>} />
             </Route>
 
             <Route element={<RouteGuard mode="admin" />}>

@@ -86,11 +86,11 @@ export default function SignupPage({ onSelect }) {
         });
         const item = Array.isArray(list) ? list[0] : list?.results?.[0];
         if (item?.id) {
-          return navigate(`/learn=${code}`);
+          return navigate(`/learn`);
         }
       } catch {}
       setErr(e?.response?.data?.detail || "Could not create enrollment");
-      return navigate(`/learn=${code}`);
+      return navigate(`/learn`);
     } finally {
       setBusy(false);
     }

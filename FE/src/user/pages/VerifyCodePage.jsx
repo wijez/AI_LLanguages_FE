@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { api } from "../../api/api";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -98,7 +98,7 @@ export default function VerifyCodePage() {
         tokens: { access, refresh }
       }));
 
-     navigate("/learn", { replace: true });
+     navigate("/register", { replace: true });
     } catch (err) {
       const msg =
         err?.response?.data?.detail ||

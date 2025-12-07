@@ -24,6 +24,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
+import LessonEditor from "./LessonEditor";
 
 // --- COMPONENT CON ---
 // Component này sẽ tự tải danh sách Skill khi Accordion được mở ra
@@ -184,7 +185,8 @@ export default function TopicDetail() {
             </AccordionSummary>
             <AccordionDetails sx={{ p: 0 }}>
               {/* Component con tự tải Skills khi được mở */}
-              <LessonSkillList lessonId={lesson.id} />
+              
+              <LessonEditor lessonId={lesson.id} />
             </AccordionDetails>
           </Accordion>
         ))}

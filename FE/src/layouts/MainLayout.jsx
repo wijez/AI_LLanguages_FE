@@ -11,8 +11,8 @@ export default function MainLayout({ children, showRightNav = true,  containerCl
 
       {/* Main Content Area - Scrollable */}
       <main className="flex-1 overflow-y-auto pb-16 lg:pb-0 scrollbar-hide">
-        {/* <div className="max-w-5xl mx-auto px-4 py-6 flex justify-center"> */}
-         <div className={containerClassName ?? "max-w-5xl mx-auto px-4 py-6 flex justify-center"}>
+        {/* <div className="max-w-5xl  mx-auto px-4 py-6 flex justify-center"> */}
+         <div className={containerClassName ?? "max-w-5xl  mx-auto p-0 flex justify-center"}>
           {children}
         </div>
       </main>

@@ -96,13 +96,28 @@ export default function Task() {
   const userBadgeMap = React.useMemo(() => {
     const m = new Map();
     for (const ub of userBadges || []) {
-      // DRF ModelSerializer mặc định trả badge = id
       m.set(ub.badge, ub);
     }
     return m;
   }, [userBadges]);
 
-  const earnedCount = userBadges.length;
+  const earnedCount = React.useMemo(() => {
+    return badges.filter((badge) => {
+      const ub = userBadgeMap.get(badge.id);
+      if (!ub) return false;
+  
+      const target = getBadgeTarget(badge.criteria);
+      const progress = ub.progress ?? 0;
+  
+      if (target > 0) {
+        return progress >= target;
+      }
+  
+      // Không có target nhưng đã có UserBadge => coi là đạt
+      return true;
+    }).length;
+  }, [badges, userBadgeMap]);
+  
   const totalBadges = badges.length;
 
   if (loading) {
@@ -199,111 +214,86 @@ export default function Task() {
 
             return (
               <div
-                key={badge.id}
-                className="relative flex flex-col rounded-2xl border bg-white/80 p-4 shadow-sm backdrop-blur-sm"
-              >
-                {/* Status chip */}
-                <div
-                  className={`absolute right-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass}`}
-                >
-                  {status === "earned" && (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  )}
-                  {status === "in_progress" && (
-                    <Target className="h-3.5 w-3.5" />
-                  )}
-                  {status === "locked" && (
-                    <Lock className="h-3.5 w-3.5" />
-                  )}
-                  <span>{statusLabel}</span>
-                </div>
+  key={badge.id}
+  className="relative flex flex-col rounded-2xl border bg-white p-4 shadow-sm transition hover:shadow-md"
+>
+  {/* Status chip */}
+  <div className="flex justify-end mb-2">
+  <div
+    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass}`}
+  >
+    {status === "earned" && <CheckCircle2 className="h-3.5 w-3.5" />}
+    {status === "in_progress" && <Target className="h-3.5 w-3.5" />}
+    {status === "locked" && <Lock className="h-3.5 w-3.5" />}
+    <span>{statusLabel}</span>
+  </div>
+</div>
 
-                {/* Icon + title */}
-                <div className="mb-3 flex items-start gap-3">
-                  <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-100 to-sky-100 text-indigo-600">
-                    {hasIcon ? (
-                      isIconUrl ? (
-                        // nếu backend trả URL icon
-                        <img
-                          src={badge.icon}
-                          alt={badge.name}
-                          className="h-8 w-8 rounded-xl object-contain"
-                        />
-                      ) : (
-                        // nếu backend trả key icon, tạm dùng chữ cái đầu
-                        <span className="text-lg font-bold">
-                          {badge.icon[0]?.toUpperCase() ||
-                            badge.name[0]?.toUpperCase() ||
-                            "🏅"}
-                        </span>
-                      )
-                    ) : (
-                      <Award className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      {badge.name}
-                    </h3>
-                    {badge.description && (
-                      <p className="mt-1 line-clamp-2 text-xs text-gray-500">
-                        {badge.description}
-                      </p>
-                    )}
-                    {ub?.awarded_at && status === "earned" && (
-                      <p className="mt-1 text-[11px] text-emerald-600">
-                        Đạt ngày {formatDate(ub.awarded_at)}
-                      </p>
-                    )}
-                  </div>
-                </div>
 
-                {/* Criteria info */}
-                {badge.criteria && Object.keys(badge.criteria || {}).length > 0 && (
-                  <div className="mb-2 rounded-xl bg-gray-50 px-3 py-2 text-[11px] text-gray-600">
-                    <span className="font-medium text-gray-700">
-                      Điều kiện:&nbsp;
-                    </span>
-                    <span className="break-words">
-                      {badge.criteria.type
-                        ? `${badge.criteria.type} `
-                        : ""}
-                      {badge.criteria.days
-                        ? `• ${badge.criteria.days} ngày `
-                        : ""}
-                      {badge.criteria.target
-                        ? `• ${badge.criteria.target} `
-                        : ""}
-                      {!badge.criteria.type &&
-                        !badge.criteria.days &&
-                        !badge.criteria.target &&
-                        JSON.stringify(badge.criteria)}
-                    </span>
-                  </div>
-                )}
+  {/* ICON – center */}
+  <div className="flex justify-center pt-4 pb-3">
+    <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-100 to-sky-100 text-indigo-600">
+      {hasIcon ? (
+        isIconUrl ? (
+          <img
+            src={badge.icon}
+            alt={badge.name}
+            className="h-10 w-10 object-contain"
+          />
+        ) : (
+          <span className="text-2xl font-bold">
+            {badge.icon[0]?.toUpperCase() ||
+              badge.name[0]?.toUpperCase() ||
+              "🏅"}
+          </span>
+        )
+      ) : (
+        <Award className="h-7 w-7" />
+      )}
+    </div>
+  </div>
 
-                {/* Progress */}
-                {showProgressBar && (
-                  <div className="mt-auto">
-                    <div className="mb-1 flex items-center justify-between text-[11px] text-gray-500">
-                      <span>
-                        {status === "earned" ? "Hoàn thành" : "Tiến độ"}
-                      </span>
-                      {target > 0 && (
-                        <span>
-                          {Math.min(progress, target)} / {target}
-                        </span>
-                      )}
-                    </div>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
-                      <div
-                        style={{ width: `${percent}%` }}
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 transition-[width] duration-500"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+  {/* NAME */}
+  <div className="text-center">
+    <h3 className="text-sm font-semibold text-gray-900">
+      {badge.name}
+    </h3>
+
+    {badge.description && (
+      <p className="mt-1 text-xs text-gray-500 line-clamp-2">
+        {badge.description}
+      </p>
+    )}
+
+    {ub?.awarded_at && status === "earned" && (
+      <p className="mt-1 text-[11px] text-emerald-600">
+        Đạt ngày {formatDate(ub.awarded_at)}
+      </p>
+    )}
+  </div>
+
+  {/* PROGRESS – bottom */}
+  {showProgressBar && (
+    <div className="mt-4">
+      <div className="mb-1 flex justify-between text-[11px] text-gray-500">
+        <span>{status === "earned" ? "Hoàn thành" : "Tiến độ"}</span>
+        {target > 0 && (
+          <span>
+            {Math.min(progress, target)} / {target}
+          </span>
+        )}
+      </div>
+
+      <div className="h-2 overflow-hidden rounded-full bg-gray-100">
+        <div
+          style={{ width: `${percent}%` }}
+          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 transition-all duration-500"
+        />
+      </div>
+    </div>
+  )}
+</div>
+
             );
           })}
         </div>

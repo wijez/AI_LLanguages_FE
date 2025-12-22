@@ -63,7 +63,6 @@ export default function SkillsPage() {
   ];
 
   const handleViewSkill = (row) => {
-    // Điều hướng đến trang chi tiết, mang theo `type` để render động
     navigate(`/admin/skill/${row.id}?type=${row.type}`);
   };
 

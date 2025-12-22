@@ -24,6 +24,7 @@
     "newsfeed": "动态",
     "setting": "设置",
     "logout": "退出",
+    "friend": "朋友",
 
     "logoutConfirmTitle": "确认退出",
     "logoutConfirmMessage": "您确定要退出 Aivory 吗？",

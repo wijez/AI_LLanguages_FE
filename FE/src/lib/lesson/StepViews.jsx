@@ -257,9 +257,13 @@ export function renderPron(q, typed, setTyped, isRecording, isProcessing, startR
         </button>
 
         {!isRecording ? (
-          <button onClick={startRecord} className="rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700">🎙️ Ghi</button>
+          <button onClick={()=>{  
+            console.log("[UI] startRecord clicked"); startRecord()
+          }} className="rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700">🎙️ Ghi</button>
         ) : (
-          <button onClick={stopRecord} className="rounded-lg bg-rose-600 text-white px-3 py-2 hover:bg-rose-700">⏹ Dừng</button>
+          <button onClick={() => { 
+            console.log("[UI] startRecord clicked"); stopRecord()
+          }} className="rounded-lg bg-rose-600 text-white px-3 py-2 hover:bg-rose-700">⏹ Dừng</button>
         )}
       </div>
 

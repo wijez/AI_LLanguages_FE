@@ -31,10 +31,11 @@ import RegisterAccountPage from "./user/pages/RegisterAccountPage.jsx";
 import VerifyCodePage from "./user/pages/VerifyCodePage.jsx";
 import { Toaster } from "react-hot-toast";
 import { ChatWidget } from "./components/chat/ChatWidget.jsx";
-import RoleplayChatDemo from "./components/chat/test.jsx";
+import RoleplayChatDemo from "./components/chat/RoleplayChatDemo.jsx";
 import { hydrateFromCache, fetchMeSafe } from "./store/sessionSlice";
 import RouteGuard from "./components/RouteGuard.jsx";
 import FriendPage from "./user/pages/FriendPage.jsx";
+import RouteLoading from "./components/RouteLoading.jsx";
 
 const EXCLUDED_PATHS = [
   "/admin",
@@ -114,6 +115,7 @@ function App() {
             <Route path="/forbidden" element={<ForbiddenPage />} />
             <Route path="*" element={<NotFound404 />} />
           </Routes>
+        <RouteLoading /> 
         <GlobalChatWidget />
       </BrowserRouter>
     </AppProviders>

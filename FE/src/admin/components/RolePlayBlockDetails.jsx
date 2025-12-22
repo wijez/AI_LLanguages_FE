@@ -18,6 +18,8 @@ import {
 } from "@mui/material";
 import UniversalEditor from "./forms/UniversalEditor";
 import { rawJson } from "../../utils/rawJson";
+import { audioKeyToUrl } from "../../components/chat/utils"
+
 
 const sectionColors = {
   background: "default",
@@ -108,20 +110,55 @@ export default function RolePlayBlockDetail() {
   // state cho rawjson
   const [showRaw, setShowRaw] = useState(false);
 
+  const normalizeRoleplayBlockPayload = (p, currentBlock) => {
+    const out = { ...p };
+    if (!("text" in out)) {
+      out.text = currentBlock.text;
+    }
+    if ("extra" in out) {
+      if (typeof out.extra !== "object" || out.extra === null) {
+        out.extra = {};
+      }
+    } else if (currentBlock.extra) {
+      out.extra = currentBlock.extra;
+    }
+    delete out.audio_key;
+    if ("tts_voice" in out) {
+      if (out.tts_voice === null || out.tts_voice === "") {
+        delete out.tts_voice;
+      }
+    }
+    
+    if ("order" in out && typeof out.order === "number") {
+      out.order = Math.min(out.order, 1_000_000);
+    }
+    return out;
+  };
+  
   const submitBlockPatch = async (payload) => {
     try {
       setSaving(true);
-      const updated = await api.RoleplayBlocks.patch(block.id, payload);
-      // merge kết quả (nếu API trả partial)
-      setBlock((prev) => ({ ...(prev || {}), ...(updated || payload) }));
+  
+      const clean = normalizeRoleplayBlockPayload(payload, block);
+  
+      const updated = await api.RoleplayBlocks.patch(block.id,   clean);
+  
+      setBlock((prev) => ({ ...(prev || {}), ...(updated || clean) }));
       showSnack("success", "Đã lưu thay đổi");
       closeEditor();
     } catch (e) {
-      showSnack("error", e?.message || "Lưu thất bại");
+      console.error("PATCH block error:", e?.response?.data || e);
+      showSnack(
+        "error",
+        e?.response?.data
+          ? JSON.stringify(e.response.data)
+          : e?.message || "Lưu thất bại"
+      );
     } finally {
       setSaving(false);
     }
   };
+  
 
   useEffect(() => {
     let cancel = false;
@@ -469,9 +506,18 @@ export default function RolePlayBlockDetail() {
                   <Typography component="div" color="text.secondary">
                     Audio Key:
                   </Typography>
-                  <Typography component="div">
-                    {block.audio_key || "N/A"}
-                  </Typography>
+                  {block.audio_key ? (
+                    <audio
+                      controls
+                      preload="none"
+                      style={{ width: "100%" }}
+                      src={audioKeyToUrl(block.audio_key)}
+                    >
+                      Trình duyệt của bạn không hỗ trợ audio.
+                    </audio>
+                  ) : (
+                    <Typography component="div">N/A</Typography>
+                  )}
                 </Box>
               </Box>
 
@@ -561,15 +607,16 @@ export default function RolePlayBlockDetail() {
         loading={saving}
         title="Sửa RolePlay Block"
         initialValues={{
-          section: block.section || "",
-          role: block.role || "",
-          lang_hint: block.lang_hint || "",
-          tts_voice: block.tts_voice || "",
-          audio_key: block.audio_key || "",
+          section: block.section,
+          role: block.role ?? "",
+          lang_hint: block.lang_hint ?? "",
+          tts_voice: block.tts_voice ?? "",
+          audio_key: block.audio_key ?? "",
           order: Number.isFinite(block.order) ? block.order : 0,
           is_active: !!block.is_active,
-          text: block.text || "",
+          text: block.text ?? "",
         }}
+        
         fields={blockFields}
         onClose={closeEditor}
         onSubmit={submitBlockPatch}

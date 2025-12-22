@@ -18,11 +18,11 @@ function buildUrl({ friendsOnly = false, limit = 50 }) {
 }
 
 function wsURL() {
-  const fromEnv = import.meta?.env?.VITE_API_WS;
+  const fromEnv = import.meta.env.VITE_API_WS;
   if (fromEnv && fromEnv.startsWith("ws")) return fromEnv;
 
   const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  const host = import.meta?.env?.VITE_API_HOST;
+  const host = import.meta.env.VITE_API_HOST;
 
   return `${proto}://${host}/ws/leaderboard/`;
 }
@@ -95,7 +95,6 @@ function LeaderboardList({ items, emptyText = "Chưa có dữ liệu" }) {
   );
 }
 
-// ========================= Main Page =========================
 export default function Rank() {
   const [loadingGlobal, setLoadingGlobal] = useState(true);
   const [loadingFriends, setLoadingFriends] = useState(true);
@@ -221,22 +220,26 @@ export default function Rank() {
     : "Chưa có dữ liệu bạn bè (cần có bạn đã accepted).";
 
   return (
-    <div className="w-full">
-      <div className="overflow-hidden bg-white shadow-xl flex flex-col min-h-[30px] md:min-h-[calc(100vh)]">
-          
-          {/* Header Section with Gradient */}
+    <div className="w-full h-screen">
+      <div className="bg-white shadow-xl flex flex-col h-full overflow-hidden">
+
+        {/* ================= HEADER (STICKY) ================= */}
+        <div className="sticky top-0 z-40">
+          {/* Gradient Header */}
           <div className="relative bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500">
-            <div className="h-36 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500" />
+            <div className="h-36" />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="flex items-center gap-3 text-white">
                 <Trophy className="w-8 h-8" />
-                <h1 className="text-3xl font-bold tracking-tight">Bảng xếp hạng</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Bảng xếp hạng
+                </h1>
               </div>
             </div>
           </div>
 
-          {/* Tab Switch - Centered */}
-          <div className="flex justify-center -mt-6 relative z-20 px-6">
+          {/* ================= TAB SWITCH (STICKY) ================= */}
+          <div className="relative z-50 flex justify-center -mt-6 px-6 pb-4 bg-transparent">
             <div className="inline-flex items-center rounded-full bg-white dark:bg-zinc-800 p-1.5 shadow-lg border border-zinc-200 dark:border-zinc-700 ring-4 ring-white dark:ring-zinc-900">
               <button
                 type="button"
@@ -251,6 +254,7 @@ export default function Rank() {
                 <Trophy className="w-4 h-4" />
                 Tất cả
               </button>
+
               <button
                 type="button"
                 onClick={() => setActiveTab("friends")}
@@ -266,38 +270,40 @@ export default function Rank() {
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Content Section */}
-          <div className="flex-1 px-6 pt-8 pb-6 flex flex-col overflow-hidden">
-            {/* Loading State */}
-            {loading && (
-              <div className="flex items-center justify-center gap-2 py-8 text-zinc-500">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm font-medium">Đang tải dữ liệu...</span>
-              </div>
-            )}
-
-            {/* Leaderboard List */}
-            {!loading && (
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <LeaderboardList items={items} emptyText={emptyText} />
-              </div>
-            )}
-          </div>
-
-          {/* Footer Info */}
-          <div className="px-6 pb-6">
-            <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-              <span>
-                {isGlobal ? "Tất cả người dùng" : "Bạn bè của bạn"} • All-time
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                Live updates
+        {/* ================= CONTENT (SCROLL ONLY HERE) ================= */}
+        <div className="flex-1 overflow-hidden px-6 pb-6">
+          {loading && (
+            <div className="flex items-center justify-center gap-2 py-8 text-zinc-500">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">
+                Đang tải dữ liệu...
               </span>
             </div>
+          )}
+
+          {!loading && (
+            <div className="h-full overflow-y-auto  pr-2 scrollbar-hide">
+              <LeaderboardList items={items} emptyText={emptyText} />
+            </div>
+          )}
+        </div>
+
+        {/* ================= FOOTER (STATIC) ================= */}
+        <div className="px-6 pb-4">
+          <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <span>
+              {isGlobal ? "Tất cả người dùng" : "Bạn bè của bạn"} • All-time
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Live updates
+            </span>
           </div>
         </div>
+
       </div>
-  );
+    </div>
+  )
 }

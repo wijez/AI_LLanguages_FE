@@ -1,7 +1,6 @@
-// src/pages/RegisterPage.jsx
 import React, { useState } from "react";
 import { api } from "../../api/api"; //
-import { useNavigate } from "react-router-dom"; // Giả sử bạn dùng React Router
+import { useNavigate } from "react-router-dom"; 
 
 /**
  * Trang Đăng Ký
@@ -37,7 +36,6 @@ export default function RegisterAccountPage({ logo }) {
     setError("");
 
     try {
-      // Dùng api.UsersApp.post từ api.js
       await api.UsersApp.post("register/", {
         username: username.trim(),
         email: email.trim(),
@@ -54,7 +52,7 @@ export default function RegisterAccountPage({ logo }) {
         err?.response?.data?.message ||
         err?.message ||
         "Không thể đăng ký. Vui lòng thử lại.";
-      // Xử lý lỗi validation từ DRF (nếu có)
+      // Xử lý lỗi validation từ DRF
       if (typeof err?.response?.data === 'object') {
         let errorMsg = [];
         if (err.response.data.username) errorMsg.push(`Username: ${err.response.data.username[0]}`);

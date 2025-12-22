@@ -62,7 +62,7 @@ export default function Info() {
 
   const isBusy = status === "loading" || status === "refreshing";
 
-  // 🔧 CỐT LÕI: Nếu chưa có sessionUser HOẶC đang busy → hiển thị Spinner (không để khung rỗng phải F5)
+  // Nếu chưa có sessionUser HOẶC đang busy → hiển thị Spinner (không để khung rỗng phải F5)
   if (!sessionUser || isBusy || !userView) {
     return <Spinner />;
   }

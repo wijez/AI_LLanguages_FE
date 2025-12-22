@@ -1,4 +1,3 @@
-// FE/src/pages/Friend.jsx (hoặc tương đương)
 import React from "react";
 import { Mail } from "lucide-react";
 import { api } from "../../api/api";
@@ -192,7 +191,7 @@ export default function Friend() {
       return;
     }
 
-    // Nếu backend đã báo pending/accepted thì không gửi nữa
+    // be đã báo pending/accepted thì không gửi nữa
     const relation = friendMap[user.id];
     if (
       relation === "accepted" ||

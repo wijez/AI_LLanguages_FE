@@ -33,7 +33,6 @@ export default function TopicsPage({ columns }) {
   const [loadingLangs, setLoadingLangs] = React.useState(true);
   const [selectedLang, setSelectedLang] = React.useState(""); // Lưu ID ngôn ngữ
 
-  // 👈 Tải danh sách ngôn ngữ khi component mount
   React.useEffect(() => {
     api.Languages.list({ page_size: 100 }, { ttl: 5000 }) // cache 5s
       .then((data) => {
@@ -47,7 +46,6 @@ export default function TopicsPage({ columns }) {
       .finally(() => setLoadingLangs(false));
   }, []); // Chỉ chạy 1 lần
 
-  // --- Các hàm gốc (không đổi) ---
   const renderActions = ({ selection, reload }) => {
     const firstId = selection?.[0] ?? null;
     return (
@@ -111,10 +109,8 @@ export default function TopicsPage({ columns }) {
     return renderActions(ctx);
   };
 
-  // 👈 Path động cho resource table
   const resourcePath = React.useMemo(() => {
     if (selectedLang) {
-      // Lọc theo ID ngôn ngữ (cách chuẩn của DRF)
       return `/topics/?language=${selectedLang}`;
     }
     return "/topics/"; // Mặc định tải tất cả
@@ -122,7 +118,6 @@ export default function TopicsPage({ columns }) {
 
   return (
     <>
-      {/* 👈 HỘP LỌC NGÔN NGỮ MỚI */}
       <Box
         component={Paper}
         variant="outlined"
@@ -156,7 +151,6 @@ export default function TopicsPage({ columns }) {
         )}
       </Box>
 
-      {/* 👈 ResourceTable được cập nhật */}
       <ResourceTable
         key={resourcePath} 
         title="Topics"
@@ -173,7 +167,6 @@ export default function TopicsPage({ columns }) {
         headerActions={headerActionsWithReload}
       />
 
-      {/* Dialog tạo lesson (không đổi) */}
       <Dialog
         open={openLesson}
         onClose={() => setOpenLesson(false)}
@@ -212,7 +205,6 @@ export default function TopicsPage({ columns }) {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog tạo skill (không đổi) */}
       <Dialog
         open={openSkill}
         onClose={() => setOpenSkill(false)}
@@ -250,7 +242,6 @@ export default function TopicsPage({ columns }) {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar (không đổi) */}
       <Snackbar
         open={!!toast}
         autoHideDuration={2500}

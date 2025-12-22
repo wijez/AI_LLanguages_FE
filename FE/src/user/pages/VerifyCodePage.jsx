@@ -14,10 +14,9 @@ export default function VerifyCodePage() {
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch(); 
 
-  // [SỬA 2] Lấy cả username và email từ URL
-  // Trang RegisterPage phải chuyển hướng đến /verify?username=user01&email=user@example.com
+  // Lấy cả username và email từ URL
   const email = searchParams.get("email");
-  const username = searchParams.get("username"); // API cần trường này
+  const username = searchParams.get("username"); 
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -25,14 +24,14 @@ export default function VerifyCodePage() {
   const [success, setSuccess] = useState("");
   const inputsRef = useRef([]);
 
-  // [SỬA 1] Sửa logic: Chấp nhận cả chữ và số (alphanumeric)
+  // Chấp nhận cả chữ và số (alphanumeric)
   const canSubmit = code.every((c) => c.match(/^[A-Za-z0-9]$/)) && !loading;
 
   // Xử lý nhập liệu và tự động focus
   const handleChange = (e, index) => {
     const val = e.target.value;
 
-    // [SỬA 1] Sửa logic: Cho phép cả chữ và số
+    // ho phép cả chữ và số
     if (!/^[A-Za-z0-9]?$/.test(val)) return;
 
     const newCode = [...code];
@@ -84,10 +83,9 @@ export default function VerifyCodePage() {
     try {
       const fullCode = code.join("");
 
-      // [SỬA 2] Gửi đúng payload mà API yêu cầu (username và code)
       const data = await api.UsersApp.post("verify_user/", {
-        username: username, // Gửi username
-        verify_code: fullCode, // Gửi verify_code
+        username: username, 
+        verify_code: fullCode, 
       });
 
       const access = data?.tokens?.access ?? data?.access ?? null;
@@ -110,7 +108,6 @@ export default function VerifyCodePage() {
     }
   }
 
-  // Gửi lại mã (vẫn dùng email)
   async function handleResendCode() {
     if (!email) {
       setError("Không tìm thấy email. Vui lòng quay lại trang đăng ký.");
@@ -122,7 +119,6 @@ export default function VerifyCodePage() {
     setSuccess("");
 
     try {
-      // Dùng api.UsersApp.post từ api.js
       await api.UsersApp.post("resend-verify-code/", { email });
       setSuccess("Đã gửi lại mã xác thực. Vui lòng kiểm tra email.");
     } catch (err) {
@@ -150,12 +146,11 @@ export default function VerifyCodePage() {
                   key={i}
                   ref={(el) => (inputsRef.current[i] = el)}
                   type="text"
-                  inputMode="text" // Đổi sang "text" để nhận chữ
+                  inputMode="text" 
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleChange(e, i)}
                   onKeyDown={(e) => handleKeyDown(e, i)}
-                  // [SỬA 3] Thêm sự kiện onPaste vào ô đầu tiên
                   onPaste={i === 0 ? handlePaste : undefined}
                   className="w-12 h-14 text-center text-2xl font-semibold rounded-xl border border-gray-200 bg-gray-50 text-gray-900 focus:outline-none focus:ring-2 focus:ring-sky-400"
                 />

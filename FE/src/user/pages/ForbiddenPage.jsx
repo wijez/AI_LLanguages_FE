@@ -10,7 +10,7 @@ export default function ForbiddenPage() {
         Rất tiếc, tài khoản của bạn không có quyền truy cập vào khu vực này.
       </p>
       <Link
-        to="/learn" // Hoặc trang chủ của bạn
+        to="/learn"
         className="mt-6 px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg shadow hover:bg-blue-700 transition"
       >
         Quay về trang học

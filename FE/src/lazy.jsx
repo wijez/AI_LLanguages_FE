@@ -35,3 +35,7 @@ export const SignupPage = lazy(() => import('./user/pages/SignUpPage.jsx'));
 export const LoginPage = lazy(() => import('./user/pages/LoginPage.jsx'));
 export const NotFound404 = lazy(() => import('./components/NotFound404.jsx'))
 export const ForbiddenPage = lazy(() => import('./user/pages/ForbiddenPage.jsx'))
+
+export const NotificationsPanel = lazy(() => import('./components/Panels/NotificationsPanel.jsx'))
+export const DailyXPPanel = lazy(() => import('./components/Panels/DailyXPPanel.jsx'))
+export const CalendarPanel = lazy(() => import('./components/Panels/CalendarPanel.jsx'))

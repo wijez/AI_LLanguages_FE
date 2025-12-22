@@ -13,7 +13,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { api } from "../../api/api";
 import { fetchMeSafe } from "../../store/sessionSlice";
-
+import ProfileMoreMobile from "../Bars/ProfileMoreMobile";
 // ========= Dicebear config =========
 const DICEBEAR_BASE =
   (import.meta.env && import.meta.env.VITE_DICEBEAR_BASE);
@@ -191,31 +191,37 @@ function InfoCard({ user }) {
 
   return (
     <div className="w-full h-full">
-      <div
-        className="w-full h-full overflow-hidden bg-white shadow-xl flex flex-col
-                        min-h-[calc(100vh-112px)] md:min-h-[calc(100vh-48px)]"
-      >
-        {/* Header gradient + avatar center */}
-        <div className="relative">
-          <div className="h-36 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500" />
-          <div className="absolute inset-x-0 -bottom-14 flex justify-center">
-            <div className="h-28 w-28 rounded-2xl bg-gradient-to-br from-indigo-400 to-purple-500 shadow-lg ring-4 ring-white overflow-hidden flex items-center justify-center">
-              {currentAvatar && !imgErr ? (
-                <img
-                  src={currentAvatar}
-                  alt="avatar"
-                  className="h-full w-full object-cover"
-                  onError={() => setImgErr(true)}
-                />
-              ) : (
-                <User2 className="h-14 w-14 text-white" />
-              )}
-            </div>
-          </div>
-        </div>
+      <div className="w-full h-full overflow-hidden bg-white shadow-xl flex flex-col">
+  
+<div className="sticky top-0 z-40">
+  <div className="relative bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500">
+    <div className="h-36" />
+
+    {/* Avatar center */}
+    <div className="absolute inset-x-0 bottom-0 translate-y-1/2 flex justify-center">
+      <div className="h-28 w-28 rounded-2xl
+                      bg-gradient-to-br from-indigo-400 to-purple-500
+                      shadow-lg ring-4 ring-white overflow-hidden
+                      flex items-center justify-center">
+        {currentAvatar && !imgErr ? (
+          <img
+            src={currentAvatar}
+            alt="avatar"
+            className="h-full w-full object-cover"
+            onError={() => setImgErr(true)}
+          />
+        ) : (
+          <User2 className="h-14 w-14 text-white" />
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
 
         {/* Body */}
-        <div className="flex-1 px-6 pt-20 pb-6 flex flex-col">
+        <div className="flex-1 overflow-y-auto px-6 pt-24 pb-6 flex flex-col">
+
           {/* Edit button (align right) */}
           <div className="w-full flex justify-end">
             {!editing ? (
@@ -429,7 +435,7 @@ function InfoCard({ user }) {
               ))}
             </dl>
           </section>
-
+          <ProfileMoreMobile /> 
           {/* FORM CHỈNH SỬA HỒ SƠ (bao gồm chọn avatar Dicebear) */}
         
 

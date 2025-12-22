@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { sttRecognizeBlob } from "../api/stt";
+// import { sttRecognizeBlob } from "../api/stt";
 
 /**
  * Hook ghi âm + trả transcript qua onTranscript.
@@ -27,9 +27,14 @@ export function useSpeechRecorder({
       mr.onstop = async () => {
         setRecState("proc");
         try {
+          console.log("[Recorder] onstop fired");
+          console.log("[Recorder] chunks =", chunksRef.current.length);
+
           const blob = new Blob(chunksRef.current, { type: mimeType });
-          const text = await sttRecognizeBlob(blob, { languageCode });
-          onTranscript?.(text || "");
+          console.log("[Recorder] blob size =", blob.size);
+          // const text = await sttRecognizeBlob(blob, { languageCode });
+          // onTranscript?.(text || "");
+          onTranscript?.(blob);
         } finally {
           cleanupStream();
           setRecState("idle");

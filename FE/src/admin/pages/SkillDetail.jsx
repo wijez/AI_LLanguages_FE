@@ -388,7 +388,6 @@ export default function SkillDetail() {
               variant="outlined"
             />
           )}
-          {/* Bạn có thể thêm nút "Chỉnh sửa" ở đây để link sang trang Editor */}
           <Button
             component={Link}
             to={`/admin/skill/${id}/edit`}

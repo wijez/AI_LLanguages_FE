@@ -72,6 +72,7 @@ export function normalizeSkill(skill) {
       return (skill.pronunciation_prompts || []).map((p) => ({
         id: p.id,
         type: "pron",
+        prompt: p,
         question: `Phát âm: ${p.word}${p.phonemes ? ` (${p.phonemes})` : ""}`,
         ttsSample: p.answer || p.word,
         answer: p.answer || p.word,

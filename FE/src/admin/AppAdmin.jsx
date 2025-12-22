@@ -32,6 +32,7 @@ import CategoryRounded from "@mui/icons-material/CategoryRounded";
 import ExtensionRounded from "@mui/icons-material/ExtensionRounded";
 import SpellcheckRounded from "@mui/icons-material/SpellcheckRounded";
 import ChatRounded from "@mui/icons-material/ChatRounded";
+import NotificationsRounded from "@mui/icons-material/NotificationsRounded"
 
 import Dashboard from "./components/Dashboard";
 import ResourceTable from "./components/ResourceTable";
@@ -40,6 +41,7 @@ import SkillDetail from "./pages/SkillDetail";
 import SkillEditor from "./components/SkillEditor";
 import RoleplayDetail from "./components/RoleplayDetail";
 import RolePlayBlockDetails from "./components/RolePlayBlockDetails";
+import AdminDropdown from "../components/Dropdowns/AdminDropdown";
 
 const drawerWidth = 240;
 
@@ -55,7 +57,13 @@ const SKILL_TYPE_OPTIONS = [
   { value: "quiz", label: "Generic MCQ/QA" },
   { value: "pron", label: "Pronunciation" },
 ];
-
+const NOTIFICATION_TYPE_OPTIONS = [
+  { value: "system", label: "System" },
+  { value: "event_reminder", label: "Event Reminder" },
+  { value: "quest_update", label: "Quest Update" },
+  { value: "league_reset", label: "League Reset" },
+  { value: "streak_alert", label: "Streak Alert" },
+];
 const Shell = () => {
   const theme = useTheme();
   const mdUp = useMediaQuery(theme.breakpoints.up("md"));
@@ -115,6 +123,12 @@ const Shell = () => {
             <ListItemText sx={{ ml: 1 }} primary="Skills" />
           </ListItemButton>
         </Link>
+        <Link to="/admin/notifications">
+          <ListItemButton>
+            <NotificationsRounded />
+            <ListItemText sx={{ ml: 1 }} primary="Notifications" />
+          </ListItemButton>
+        </Link>
       </List>
     </>
   );
@@ -142,7 +156,7 @@ const Shell = () => {
           <Typography fontWeight={800}>AIvory Admin</Typography>
           <Box sx={{ flex: 1 }} />
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Avatar sx={{ width: 32, height: 32 }}>A</Avatar>
+            <AdminDropdown />
           </Stack>
         </Toolbar>
       </AppBar>
@@ -280,6 +294,67 @@ function SkillsTableWrapper({ columns }) {
   );
 }
 
+function NotificationsTableWrapper({ columns }) {
+  return (
+    <ResourceTable
+      title="System Notifications"
+      resource="/notifications/"
+      columns={columns}
+      form={[
+        { 
+          name: "user", 
+          label: "User ID", 
+          type: "number", 
+          required: true,
+          helperText: "ID của user nhận thông báo"
+        },
+        { 
+          name: "type", 
+          label: "Type", 
+          type: "select",
+          options: NOTIFICATION_TYPE_OPTIONS,
+          required: true 
+        },
+        { 
+          name: "title", 
+          label: "Title", 
+          required: false 
+        },
+        { 
+          name: "body", 
+          label: "Body", 
+          multiline: true, 
+          rows: 3, 
+          required: false 
+        },
+        {
+          name: "payload",
+          label: "Payload (JSON)",
+          multiline: true,
+          rows: 2,
+          helperText: 'Ví dụ: {"link": "/shop", "id": 123}'
+        },
+        { 
+          name: "read_at", 
+          label: "Read At (YYYY-MM-DD HH:MM:SS)", 
+          helperText: "Để trống nếu chưa đọc" 
+        },
+      ]}
+      transformPayload={(payload) => {
+        if (payload.payload && typeof payload.payload === 'string') {
+          try {
+            payload.payload = JSON.parse(payload.payload);
+          } catch (e) {
+            console.error("Invalid JSON payload", e);
+          }
+        }
+        return payload;
+      }}
+      searchPlaceholder="Search title or body..."
+    />
+  );
+}
+
 export default function AppAdmin() {
   const columns = {
     users: [
@@ -332,6 +407,25 @@ export default function AppAdmin() {
         headerName: "Active",
         width: 90,
         type: "boolean",
+      },
+    ],
+    notifications: [
+      { field: "id", headerName: "ID", width: 70 },
+      { field: "user", headerName: "User", width: 90 }, 
+      { field: "type", headerName: "Type", width: 140 },
+      { field: "title", headerName: "Title", width: 200 },
+      { field: "body", headerName: "Body", width: 280 }, 
+      { 
+        field: "read_at", 
+        headerName: "Read At", 
+        width: 160,
+        renderCell: (params) => params.value ? new Date(params.value).toLocaleString() : "Unread"
+      },
+      { 
+        field: "created_at", 
+        headerName: "Created", 
+        width: 160,
+        renderCell: (params) => params.value ? new Date(params.value).toLocaleString() : ""
       },
     ],
   };
@@ -418,6 +512,10 @@ export default function AppAdmin() {
         <Route
           path="roleplay"
           element={<RoleplayTableWrapper columns={columns.roleplay} />}
+        />
+        <Route
+          path="notifications"
+          element={<NotificationsTableWrapper columns={columns.notifications} />}
         />
         <Route path="roleplay/:id" element={<RoleplayDetail />} />
         <Route path="roleplay-block/:id" element={<RolePlayBlockDetails />} />

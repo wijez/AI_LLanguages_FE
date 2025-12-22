@@ -35,7 +35,6 @@ export default function SignupPage({ onSelect }) {
   const [err, setErr] = React.useState("");
 
   const handleSelect = async (code) => {
-    // ✅ đồng bộ với api.js: token key = 'access'
     const access =
       typeof window !== "undefined" ? localStorage.getItem("access") : null;
 

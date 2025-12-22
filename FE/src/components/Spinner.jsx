@@ -1,13 +1,21 @@
-import React from 'react'
+import React from "react";
 
 export default function Spinner() {
   return (
-    <div className="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50">
+    <div
+      className="
+        fixed inset-0 z-50
+        flex items-center justify-center
+        bg-white/60 backdrop-blur-sm
+      "
+    >
       <div
-        className="w-12 h-12 rounded-full animate-spin
-          border-4 border-solid border-sky-500 border-t-transparent"
-        style={{ borderTopColor: "transparent" }} 
-      ></div>
+        className="
+          w-12 h-12 rounded-full
+          animate-spin
+          border-4 border-sky-500 border-t-transparent
+        "
+      />
     </div>
-  )
+  );
 }

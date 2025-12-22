@@ -178,7 +178,7 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
           </div>
 
           {/* Social Logins (wire up to your OAuth routes) */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* <div className="grid grid-cols-2 gap-3">
             <a
               href="#"
               className="rounded-xl border border-gray-200 px-4 py-3 text-center font-semibold hover:bg-gray-50"
@@ -191,7 +191,7 @@ export default function LoginPage({ onSuccess, onRedirect = "/learn", logo }) {
             >
               FACEBOOK
             </a>
-          </div>
+          </div> */}
 
           {/* Terms */}
           <p className="mt-6 text-xs text-center text-gray-500 leading-relaxed">

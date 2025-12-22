@@ -1,62 +1,22 @@
 import React, { useState } from "react";
-import {
-  Home,
-  Volume2,
-  Dumbbell,
-  Shield,
-  Briefcase,
-  Store,
-  User,
-  MoreHorizontal,
-  PlusCircle,
-  Newspaper,
-  Settings,
-  LogOutIcon,
-  Search,
-} from "lucide-react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
+import { motion, AnimatePresence } from "framer-motion";
+
 import Elephant from "../assets/elephant.svg?url";
 import { logout } from "../store/sessionSlice";
-import { useDispatch } from "react-redux";
 import ConfirmDialog from "../components/ConfirmDialog";
 import "../index.css";
-
+import { MAIN_MENU, MORE_MENU_ITEM } from "../utils/menuConfig";
 
 export default function LeftNav() {
   const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { t } = useTranslation(); // defaultNS: 'common'
+  const { t } = useTranslation();
 
-  // Dùng i18nKey thay cho label tĩnh
-  const menuItems = [
-    { icon: Home, i18nKey: "nav.learn", path: "/learn", badge: false },
-    {
-      icon: Volume2,
-      i18nKey: "nav.pronunciation",
-      path: "/speech",
-      badge: false,
-    },
-    { icon: Dumbbell, i18nKey: "nav.practice", path: "/practice", badge: true },
-    { icon: Shield, i18nKey: "nav.rank", path: "/rank", badge: false },
-    { icon: Briefcase, i18nKey: "nav.tasks", path: "/task", badge: true },
-    { icon: Store, i18nKey: "nav.shop", path: "/shop", badge: false },
-    { icon: User, i18nKey: "nav.profile", path: "/profile", badge: false },
-    {
-      icon: MoreHorizontal,
-      i18nKey: "nav.more",
-      id: "more",
-      badge: false,
-      subMenu: [
-        { icon: PlusCircle, i18nKey: "nav.addLanguage", path: "/more" },
-        { icon: Newspaper, i18nKey: "nav.newsfeed", path: "/newsfeed" },
-        { icon: Settings, i18nKey: "nav.setting", path: "/setting" },
-        { icon: LogOutIcon, i18nKey: "nav.logout", id: "logout" },
-        { icon: Search, i18nKey: "nav.friend", path: "/find-friends"},
-      ],
-    },
-  ];
+  const menuItems = [...MAIN_MENU, MORE_MENU_ITEM];
 
   const moreItem = menuItems.find((i) => i.id === "more");
   const isChildActive =
@@ -70,22 +30,48 @@ export default function LeftNav() {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const handleLogout = () => {
     dispatch(logout());
-    navigate("/login");
   };
-  const handleLogoutClick = () => {
-    setLogoutDialogOpen(true);
-  };
+  const handleLogoutClick = () => setLogoutDialogOpen(true);
+  const handleLogoutClose = () => setLogoutDialogOpen(false);
 
-  const handleLogoutClose = () => {
-    setLogoutDialogOpen(false);
+  const subMenuVariants = {
+    hidden: { 
+      height: 0, 
+      opacity: 0, 
+      overflow: "hidden",
+      transition: { duration: 0.2, ease: "easeInOut" } 
+    },
+    visible: {
+      height: "auto",
+      opacity: 1,
+      overflow: "hidden",
+      transition: { duration: 0.3, ease: "easeInOut" },
+    },
+    exit: {
+      height: 0,
+      opacity: 0,
+      overflow: "hidden",
+      transition: { duration: 0.2, ease: "easeInOut" },
+    },
   };
 
   return (
-    <div className="  w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto  scrollbar-hide sticky top-0">
+    <div 
+      className="w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto sticky top-0"
+      style={{ scrollbarGutter: 'stable', scrollbarWidth: 'thin' }} 
+    >
+      {/* Logo Section */}
       <div className="mb-8">
         <Link to="/learn">
           <h1 className="flex items-center gap-3 text-3xl font-bold text-green-500 cursor-pointer hover:text-green-600 transition-colors">
-            <img src={Elephant} alt="Elephant" className="w-24 h-24" /> Aivory
+            <motion.img
+              whileHover={{ rotate: 10, scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              src={Elephant}
+              alt="Elephant"
+              className="w-24 h-24"
+            />
+            Aivory
           </h1>
         </Link>
       </div>
@@ -95,109 +81,103 @@ export default function LeftNav() {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
 
+          // --- MENU MORE (Dropdown) ---
           if (item.id === "more") {
             return (
-              <div key={index}>
+              <div key={index} className="hidden lg:block">
                 <button
                   onClick={handleMoreMenuToggle}
                   aria-expanded={isMoreMenuOpen}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                    isMoreMenuOpen ? "bg-blue-50" : "hover:bg-gray-50"
-                  } border-2 border-transparent`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 border-2 ${
+                    isMoreMenuOpen 
+                      ? "bg-blue-50 border-transparent text-blue-500" 
+                      : "hover:bg-gray-50 border-transparent text-gray-600"
+                  }`}
                 >
-                  <div
-                    className={
-                      isMoreMenuOpen ? "text-blue-500" : "text-gray-600"
-                    }
-                  >
-                    <Icon size={24} />
-                  </div>
-                  <span
-                    className={`font-bold text-sm ${
-                      isMoreMenuOpen ? "text-blue-500" : "text-gray-600"
-                    }`}
-                  >
+                  <motion.div whileHover={{ scale: 1.1 }}>
+                     <Icon size={24} />
+                  </motion.div>
+                  
+                  <span className="font-bold text-sm">
                     {t(item.i18nKey)}
                   </span>
                 </button>
 
-                {isMoreMenuOpen && (
-                  <div className="pl-10 pt-2 space-y-1">
-                    {item.subMenu.map((subItem, subIndex) => {
-                      const isSubActive = location.pathname === subItem.path;
-                      const SubIcon = subItem.icon;
-                      if (subItem.id === "logout") {
+                <AnimatePresence initial={false}>
+                  {isMoreMenuOpen && (
+                    <motion.div
+                      variants={subMenuVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      className="pl-10 space-y-1 mt-1"
+                    >
+                      {item.subMenu.map((subItem, subIndex) => {
+                        const isSubActive = location.pathname === subItem.path;
+                        const SubIcon = subItem.icon;
+                        const itemClass = `block w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                          isSubActive
+                            ? "bg-blue-50 text-blue-600 font-semibold"
+                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                        }`;
+
+                        if (subItem.id === "logout") {
+                          return (
+                            <button key={subIndex} onClick={handleLogoutClick} className={itemClass}>
+                              <subItem.icon size={20} />
+                              <span>{t(subItem.i18nKey)}</span>
+                            </button>
+                          );
+                        }
                         return (
-                          <button
-                            key={subIndex}
-                            onClick={handleLogoutClick}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                            isSubActive
-                              ? "bg-blue-50 text-blue-600 font-semibold"
-                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-                          }`}
-                          >
-                            <subItem.icon size={20} />
+                          <Link key={subIndex} to={subItem.path} className={itemClass}>
+                            <SubIcon size={20} />
                             <span>{t(subItem.i18nKey)}</span>
-                          </button>
+                          </Link>
                         );
-                      }
-                      return (
-                        <Link
-                          key={subIndex}
-                          to={subItem.path}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                            isSubActive
-                              ? "bg-blue-50 text-blue-600 font-semibold"
-                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
-                          }`}
-                        >
-                          <SubIcon size={20} />
-                          <span>{t(subItem.i18nKey)}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           }
 
           return (
             <div key={index} className="relative">
-              <Link
-                to={item.path}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  isActive
-                    ? "bg-blue-50 border-2 border-blue-200"
-                    : "hover:bg-gray-50 border-2 border-transparent"
-                }`}
-              >
-                <div className={isActive ? "text-blue-500" : "text-gray-600"}>
-                  <Icon size={24} />
-                </div>
-                <span
-                  className={`font-bold text-sm ${
-                    isActive ? "text-blue-500" : "text-gray-600"
+              <Link to={item.path}>
+                <motion.div
+                  whileHover={{ x: 6 }} 
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-colors duration-200 ${
+                    isActive
+                      ? "bg-blue-50 border-blue-200 text-blue-500"
+                      : "border-transparent text-gray-600 hover:bg-gray-50" // CSS hover ở đây mượt hơn motion
                   }`}
                 >
-                  {t(item.i18nKey)}
-                </span>
+                  <div><Icon size={24} /></div>
+                  <span className="font-bold text-sm">
+                    {t(item.i18nKey)}
+                  </span>
+                </motion.div>
               </Link>
+              
               {item.badge && (
-                <div className="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full pointer-events-none" />
+                <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500 pointer-events-none" />
               )}
             </div>
           );
         })}
       </nav>
+
       <ConfirmDialog
         open={logoutDialogOpen}
         onClose={handleLogoutClose}
         onConfirm={handleLogout}
         title={t("nav.logoutConfirmTitle")}
         message={t("nav.logoutConfirmMessage")}
-        confirmText={t("nav.logout")} 
+        confirmText={t("nav.logout")}
         cancelText={t("nav.cancel")}
       />
     </div>

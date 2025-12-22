@@ -1,9 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import DailyQuestCard from "./Cards/DailyQuestCard";
-import TournamentCard from "./Cards/TournamentCard";
 import StatsBar from "./Bars/StatsBar";
 import Links from "./Footers/Links";
+import { NotificationsPanel, DailyXPPanel, CalendarPanel} from "../lazy"
 
 function RightNav() {
   const { t } = useTranslation(); 
@@ -18,8 +17,9 @@ function RightNav() {
       aria-label={t("nav.more")} 
     >
       <StatsBar languageCode={learn} className="mb-2" />
-      <TournamentCard />
-      <DailyQuestCard />
+      <NotificationsPanel />
+      <CalendarPanel />
+      <DailyXPPanel />
       <Links />
     </div>
   );

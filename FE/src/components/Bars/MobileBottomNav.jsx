@@ -1,5 +1,5 @@
 import React from 'react'
-import { Home, Volume2, Dumbbell, Shield, User } from 'lucide-react'
+import { Home, Volume2, Dumbbell, Shield, User, Briefcase} from 'lucide-react'
 import { useLocation, Link } from 'react-router-dom'
 
 export default function MobileBottomNav() {
@@ -10,6 +10,7 @@ export default function MobileBottomNav() {
     { icon: Volume2, label: 'PHÁT ÂM', path: '/speech' },
     { icon: Dumbbell, label: 'LUYỆN TẬP', path: '/practice' },
     { icon: Shield, label: 'BẢNG', path: '/rank' },
+    {icon: Briefcase, label: 'NHIỆM VỤ', path: '/task'},
     { icon: User, label: 'HỒ SƠ', path: '/profile' },
   ]
 

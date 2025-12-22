@@ -87,7 +87,17 @@ async function refreshAccessToken() {
   if (!refresh) throw new Error("NO_REFRESH_TOKEN");
 
   refreshing = axios
-    .post(REFRESH_URL, { refresh })
+    .post(
+      REFRESH_URL,
+       { refresh },
+       {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          "Content-Type": "application/json",
+        },
+      }
+
+    )
     .then(({ data }) => {
       const token = data?.access || data?.access_token;
       if (!token) throw new Error("NO_ACCESS_IN_REFRESH_RESPONSE");
@@ -106,66 +116,7 @@ async function refreshAccessToken() {
   return refreshing;
 }
 
-/* =========================================================
- *  RESPONSE INTERCEPTOR (debug log + auto refresh 401)
- * =======================================================*/
-// instance.interceptors.response.use(
-//   (res) => {
-//     if (DEBUG) {
-//       console.groupCollapsed(
-//         `%c[API] ← ${res.status} ${res.config?.url}`,
-//         "color:#10b981;font-weight:700"
-//       );
-//       console.log("Data:", res.data);
-//       console.groupEnd();
-//     }
-//     return res;
-//   },
-//   async (err) => {
-//     const { config, response } = err || {};
-//     const status = response?.status;
-//     const reqUrl = response?.config?.url || config?.url || "";
 
-//     if (DEBUG) {
-//       console.group("%c[API ERROR]", "color:#ef4444;font-weight:700");
-//       console.error(err);
-//       if (response) {
-//         console.log("Status :", status);
-//         console.log("URL    :", reqUrl);
-//         console.log("Params :", response.config?.params);
-//         console.log("Data   :", response.data);
-//       }
-//       console.groupEnd();
-//     }
-
-//     // Tránh lặp khi chính call refresh bị 401
-//     const isRefreshCall = (reqUrl || "").includes("/users/token/refresh/");
-
-//     // Auto refresh 1 lần khi 401 (trừ refresh endpoint)
-//     if (status === 401 && !config?.__isRetry && !isRefreshCall) {
-//       try {
-//         const newAccess = await refreshAccessToken();
-//         const retryCfg = { ...config, __isRetry: true };
-//         retryCfg.headers = {
-//           ...(retryCfg.headers || {}),
-//           Authorization: `Bearer ${newAccess}`,
-//         };
-//         return instance(retryCfg);
-//       } catch (e) {
-//         const s = e?.response?.status;
-//         if (s === 400 || s === 401) {
-//           if (typeof window !== "undefined") {
-//             localStorage.removeItem("access");
-//             localStorage.removeItem("refresh");
-//           }
-//         }
-//         throw e;
-//       }
-//     }
-
-//     throw err;
-//   }
-// );
 instance.interceptors.response.use(
   (res) => {
     if (DEBUG) {
@@ -356,6 +307,7 @@ const Resources = {
   Friends: crud("/friends/"),
   CalendarEvents: crud("/calendar-events/"),
   LeaderboardEntries: crud("/leaderboard-entries/"),
+  Notifications: crud("/notifications/"),
 
   // Badges
   Badges: crud("/badges/"),
@@ -368,19 +320,10 @@ const Resources = {
   },
 };
 
-/* =========================================================
- *  APP SCOPES RIÊNG (include trong urls.py)
- * =======================================================*/
-// path("api/users/", include("users.urls"))
+
 const UsersApp = scope("/users/");
-
-// path("api/chat/", include("chat.urls"))
 const Chat = scope("/chat/");
-
-// path("api/pron/", include("pron.urls"))
 const Pron = scope("/pron/");
-
-// path("api/", include("speech.urls")) → gắn thẳng /api/
 const Speech = scope("/");
 
 const SpeechPron = {
@@ -391,11 +334,36 @@ const SpeechPron = {
     getCached(
       "/speech/tts",
       { params: { text, lang } },
-      { ttl: 0 } // luôn lấy tươi
+      { ttl: 0 } 
     ).then(unwrap),
   ttsPrompt: (promptId, lang, cfg) =>
     instance
       .post("/speech/pron/tts/", { prompt_id: promptId, lang }, cfg)
+      .then(unwrap),
+};
+
+// Roleplay session flows
+const RoleplaySession = {
+  start: (payload, cfg) =>
+    instance.post("/roleplay-session/start/", payload, cfg).then(unwrap),
+  submit: (payload, cfg) =>
+    instance.post("/roleplay-session/submit/", payload, cfg).then(unwrap),
+  practic: (payload, cfg) =>
+    instance.post("/roleplay-session/practice/", payload, cfg).then(unwrap),
+  practic_gemini: (payload, cfg) =>
+    instance.post("/roleplay-session/practice-gemini/", payload, cfg).then(unwrap),
+};
+
+Resources.RoleplayBlocks = {
+  ...Resources.RoleplayBlocks,
+  patch: (id, payload, cfg) =>
+    instance
+      .patch(`/roleplay-block/${id}/`, payload, cfg)
+      .then(unwrap),
+
+  askGemini: (payload, cfg) =>
+    instance
+      .post("/roleplay-block/ask_gemini/", payload, cfg)
       .then(unwrap),
 };
 
@@ -624,6 +592,14 @@ Resources.Users = {
       .then(unwrap)
       .finally(invalidateAll),
 };
+
+Resources.Notifications ={
+  ...Resources.Notifications,
+  read: (id, data = {}, opts) =>
+    api.patch(`/notifications/${id}/read/`, data, opts).then(unwrap),
+  markAllRead: (opts) =>
+    api.patch(`/notifications/read-all/`, null, opts).then(unwrap),
+}
 /* =========================================================
  *  EXTEND: Mistakes
  * =======================================================*/
@@ -660,6 +636,7 @@ export const api = {
   Pron,
   Speech,
   SpeechPron,
+  RoleplaySession,
 
   // tools
   exportChatTraining,

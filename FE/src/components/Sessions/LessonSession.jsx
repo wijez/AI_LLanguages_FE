@@ -7,7 +7,7 @@ import sfxWrong from "../../assets/ui-sounds-pack-2-sound-8-358892.mp3";
 import { normalizeSkill } from "../../lib/lesson/normalizeSkill";
 import { useSpeechRecorder } from "../../lib/audio/useSpeechRecorder";
 
-// NEW: import các renderer tách file
+
 import {
   LANG_BCP,
   speakText,
@@ -54,6 +54,11 @@ function checkStepCorrect(step, userAns) {
     return step.answer.map(canon).includes(canon(userAns));
   return canon(step.answer) === canon(userAns);
 }
+function checkPronCorrect(expected, transcript) {
+  if (!expected || !transcript) return false;
+  return canon(transcript).includes(canon(expected));
+}
+
 function mapSource(type) {
   switch (type) {
     case "pron":
@@ -90,6 +95,11 @@ export default function LessonSession() {
   const [doneReason, setDoneReason] = useState(null); // 'finished' | 'exhausted'
   const [hintLevel, setHintLevel] = useState(0);
 
+  const MAX_PRON_ATTEMPTS = 3;
+
+  const [pronAttempts, setPronAttempts] = useState(0);
+  const [pronPassed, setPronPassed] = useState(false);
+
   // Reset khi đổi câu
   useEffect(() => {
     setPickedId(null);
@@ -98,6 +108,11 @@ export default function LessonSession() {
     setOrdered([]);
     setHintLevel(0);
   }, [idx]);
+  useEffect(() => {
+    setPronAttempts(0);
+    setPronPassed(false);
+  }, [idx]);
+  
 
   // SFX
   const [soundOn, setSoundOn] = useState(() => {
@@ -183,6 +198,9 @@ export default function LessonSession() {
 
         if (cancelled) return;
         setSkills(arr);
+        console.group("[API] Raw skills from backend");
+console.log(arr);
+console.groupEnd();
         setIdx(0);
         setPicked(null);
         setTyped("");
@@ -228,7 +246,58 @@ export default function LessonSession() {
   const { startRecord, stopRecord, isRecording, isProcessing } =
     useSpeechRecorder({
       languageCode: currentSkill?.language_code || "en",
-      onTranscript: (txt) => setTyped(txt || ""),
+      onTranscript: async (blob) => {
+        const type = step?.type; 
+
+        console.group("[PRON] onTranscript");
+        console.log("step.type =", step?.type);
+        console.log("blob =", blob);
+        console.log("blob.size =", blob?.size);
+        console.log("blob.type =", blob?.type);
+        console.log("prompt =", step?.prompt);
+        console.log("expectedText =", step?.prompt?.answer || step?.prompt?.word);
+        console.log("skillSession =", sess?.id);
+        console.groupEnd();
+        let expectedText = null;
+        let promptId = null;
+    
+        if (type === "pron") {
+          const prompt = step.prompt;
+          expectedText = prompt?.answer || prompt?.word;
+          promptId = prompt?.id;
+        }
+    
+        else if (type === "speaking") {
+          expectedText = step?.answer; // = target
+        }
+    
+        else {
+          console.warn(`[${type}] skip: not speech-based`);
+          return;
+        }
+
+        if (!expectedText){
+          console.error("[PRON] missing expectedText"); return;
+        }
+  
+        const fd = new FormData();
+        fd.append("audio", blob);
+        fd.append("expected_text", expectedText);
+        fd.append("language_code", currentSkill.language_code);
+        if (promptId) {
+          fd.append("prompt_id", promptId);
+        }
+        fd.append("skill_session", sess.id);
+  
+        try {
+          console.log("[PRON] calling /speech/pron/up");
+          const resp = await api.SpeechPron.up(fd);
+          console.log("[PRON] response =", resp);
+          setTyped(resp.recognized || "");
+        } catch (e) {
+          console.error("[PRON] API error", e?.response?.data || e);
+        }
+      }
     });
 
   // ---------- Actions ----------
@@ -246,10 +315,66 @@ export default function LessonSession() {
       userAns = picked || "";
     } else if (step.tokens) {
       userAns = (ordered || []).join(" ");
-    } else {
+    } else if (step.type === "pron") {
       userAns = typed || "";
     }
-
+    else {
+      userAns = typed || "";
+    }
+    if (step.type === "pron") {
+      const prompt = step.prompt;
+      const expected = prompt?.answer || prompt?.word || "";
+      const ok = checkPronCorrect(expected, userAns);
+    
+      const nextAttempt = pronAttempts + 1;
+      setPronAttempts(nextAttempt);
+    
+      // ===== PASS =====
+      if (ok) {
+        setPronPassed(true);
+        setLastResult({ ok: true, user: userAns, expected });
+        setState("checked");
+        playSfx("ok");
+    
+        await api.LearningSessions.answer(sess.id, {
+          skill: currentSkill.id,
+          question_id: String(step.id),
+          user_answer: userAns,
+          source: "pronunciation",
+          attempts: nextAttempt,
+          correct: true,
+        });
+    
+        return;
+      }
+    
+      // ===== FAIL nhưng còn lượt =====
+      if (nextAttempt < MAX_PRON_ATTEMPTS) {
+        setLastResult({ ok: false, user: userAns, expected });
+        setTyped("");              // bắt buộc ghi lại
+        setState("idle");
+        playSfx("ng");
+        return;
+      }
+    
+      // ===== FAIL lần cuối =====
+      setLastResult({ ok: false, user: userAns, expected });
+      setState("checked");
+      setHearts((h) => Math.max(0, h - 1));
+      playSfx("ng");
+    
+      await api.LearningSessions.answer(sess.id, {
+        skill: currentSkill.id,
+        question_id: String(step.id),
+        user_answer: userAns,
+        source: "pronunciation",
+        attempts: nextAttempt,
+        correct: false,
+      });
+    
+      return;
+    }
+    
     const expectedLocal = expectedToText(step);
     const okLocal =
       step.type === "quiz"

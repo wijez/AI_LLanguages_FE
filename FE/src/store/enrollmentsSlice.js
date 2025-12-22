@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { api } from "../api/api";
+import { logout } from "./sessionSlice";
 
 const getAbbr = (e) => e?.language?.abbreviation || e?.language?.code || "";
 
@@ -61,6 +62,13 @@ const enrollmentsSlice = createSlice({
         state.status = "failed";
         state.error = action.payload || "Failed to load";
         state.items = [];
+      })
+      .addCase(logout, (state) => {
+        state.items = [];
+        state.status = "idle";
+        state.error = null;
+        state.selectedAbbr = null;
+        state.lastFetchedAt = null;
       });
   },
 });

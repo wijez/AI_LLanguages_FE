@@ -25,7 +25,6 @@ const EXCLUDED_PREFIXES = [
 const isExcluded = (pathname) =>
   EXCLUDED_PREFIXES.some((p) => pathname.startsWith(p));
 
-// Debug flag: dev luôn bật, trừ khi VITE_DEBUG_API=0; prod bật khi VITE_DEBUG_API=1 hoặc localStorage.debug_api=1
 const DEBUG_LOG =
   import.meta?.env?.VITE_DEBUG_API === "1" ||
   (import.meta?.env?.DEV && import.meta?.env?.VITE_DEBUG_API !== "0") ||
@@ -56,7 +55,7 @@ export default function RouteGuard({ mode = "public" }) {
     }
   }, [status, user, mode, pathname, fullPath]);
 
-  const isBusy = status === "loading" || status === "refreshing";
+  const isBusy = status === "loading" || status === "refreshing" || status === "idle";;
   if (isBusy) return <Spinner />;
 
   const nextQS = encodeURIComponent(fullPath);
@@ -76,7 +75,6 @@ export default function RouteGuard({ mode = "public" }) {
         } catch (e) {
           if (DEBUG_LOG)
             console.warn("[RouteGuard] getItem failed:", e?.name || e);
-          /* no-op */
         }
 
         return <Navigate to={to} replace />;
@@ -85,7 +83,7 @@ export default function RouteGuard({ mode = "public" }) {
     }
     case "user": {
       // Cần đăng nhập -> kèm ?next để quay lại đúng trang sau khi login
-      if (!user) return <Navigate to={`/login?next=${nextQS}`} replace />;
+      if (!user) return <Navigate to={`/`} replace />;
       return <Outlet />;
     }
     case "admin": {

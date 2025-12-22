@@ -1,17 +1,39 @@
-import { configureStore } from '@reduxjs/toolkit';
-import session from './sessionSlice';
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import session, { logout } from './sessionSlice'; 
 import learn from './learnSlice';
 import enrollments, { selectSelectedAbbr } from './enrollmentsSlice';
 
+const appReducer = combineReducers({
+  session,
+  learn,
+  enrollments,
+});
+
+// 3. Tạo Root Reducer để hứng sự kiện Logout
+const rootReducer = (state, action) => {
+  if (action.type === logout.type) {
+    state = undefined;
+    
+    try {
+      localStorage.removeItem("access");
+      localStorage.removeItem("refresh");
+      localStorage.removeItem("session.user.v1");
+      // localStorage.removeItem("learn"); 
+    } catch (e) {
+      console.warn("Logout cleanup failed:", e);
+    }
+  }
+  return appReducer(state, action);
+};
 
 export const store = configureStore({
-reducer: { session, learn, enrollments },
+  reducer: rootReducer, 
 }); 
+
 export const typeRootState = null;
 
 if (typeof window !== "undefined") {
   const LS_KEY = "learn";
-  // Hydrate từ localStorage khi bắt đầu
   try {
     const abbr = localStorage.getItem(LS_KEY);
     if (abbr) {
@@ -21,7 +43,6 @@ if (typeof window !== "undefined") {
     console.warn('[store] localStorage hydration failed:', e);
   }
 
-  // Lắng nghe thay đổi và lưu lại
   let prev = null;
   store.subscribe(() => {
     const next = selectSelectedAbbr(store.getState());
@@ -30,7 +51,6 @@ if (typeof window !== "undefined") {
       try {
         if (next) localStorage.setItem(LS_KEY, next);
         else localStorage.removeItem(LS_KEY);
-        // phát sự kiện để các chỗ khác (nếu cần) bám theo
         window.dispatchEvent(new CustomEvent("learn:changed", { detail: { abbr: next } }));
       } catch (e) {
         console.warn('[store] localStorage update failed:', e);

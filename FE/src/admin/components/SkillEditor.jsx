@@ -164,7 +164,7 @@ export default function SkillEditor() {
   // --- State Local cho nội dung ---
   const [localQuizQs, setLocalQuizQs] = React.useState([]);
   const [localFillgaps, setLocalFillgaps] = React.useState([]);
-  // (Bạn sẽ thêm state cho matching, reading... ở đây)
+
 
   // --- State cho Dialog ---
   const [dialogState, setDialogState] = React.useState({ open: false, type: '', data: null });
@@ -179,16 +179,12 @@ export default function SkillEditor() {
         setErr('');
         const rawSkill = await api.Skills.get(id, { ttl: 0 });
         
-        // (Bạn có thể bỏ bớt phần chuẩn hoá nếu không cần)
         const normalized = {
           id: rawSkill.id,
           title: rawSkill.title || rawSkill.name || `Skill ${rawSkill.id}`,
           type: rawSkill.type,
-          // ... (các trường summary khác)
-          // nested:
           quiz_questions: rawSkill.quiz_questions || [],
           fillgaps: rawSkill.fillgaps || [],
-          // ... (các loại khác)
         };
         
         if (!cancel) {
@@ -219,7 +215,6 @@ export default function SkillEditor() {
     } else if (skill.type === 'fillgap') {
       payload.fillgaps = localFillgaps;
     }
-    // (Thêm else if cho các loại khác ở đây)
     
     try {
       await api.Skills.upsertQuestions(id, payload);
@@ -282,7 +277,6 @@ export default function SkillEditor() {
     setIsDirty(true);
   };
 
-  // ====== Render helpers cho phần content theo type ======
   
   // --- Render Quiz (Admin Editor) ---
   const renderQuiz = (qs) => (

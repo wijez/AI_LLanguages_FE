@@ -22,6 +22,7 @@
     "newsfeed": "Newsfeed",
     "logout": "Logout",
     "setting": "Setting",
+    "friend": "Friend",
 
     "logoutConfirmTitle": "Confirm Logout",
     "logoutConfirmMessage": "Are you sure you want to log out of Aivory?",

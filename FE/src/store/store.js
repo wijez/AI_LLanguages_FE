@@ -27,7 +27,13 @@ const rootReducer = (state, action) => {
 };
 
 export const store = configureStore({
-  reducer: rootReducer, 
+  reducer: rootReducer,
+  // --- THÊM PHẦN NÀY ĐỂ FIX WARNING ---
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false, // Tắt kiểm tra dữ liệu tuần tự (fix lỗi 45ms)
+      immutableCheck: false,    // Tắt kiểm tra bất biến (tăng tốc độ dev khi state lớn)
+    }),
 }); 
 
 export const typeRootState = null;

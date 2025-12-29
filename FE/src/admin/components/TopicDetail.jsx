@@ -1,23 +1,10 @@
 import * as React from 'react';
-import { useParams, Link} from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../../api/api';
 import {
-  Box,
-  Paper,
-  Stack,
-  Button,
-  Chip,
-  Typography,
-  CircularProgress,
-  Divider,
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  IconButton, 
-  Tooltip, 
+  Box, Paper, Stack, Button, Chip, Typography, CircularProgress, Divider,
+  Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText,
+  IconButton, Tooltip
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditIcon from '@mui/icons-material/Edit';
@@ -25,9 +12,16 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AddIcon from '@mui/icons-material/Add';
 import LessonEditor from "./LessonEditor";
+import UniversalEditor from './forms/UniversalEditor'; // Đảm bảo đúng đường dẫn
 
-// --- COMPONENT CON ---
-// Component này sẽ tự tải danh sách Skill khi Accordion được mở ra
+const CREATE_LESSON_FIELDS = [
+  { name: "title", label: "Tiêu đề Lesson", type: "text", required: true },
+  { name: "order", label: "Thứ tự (Order)", type: "number", required: true },
+  { name: "xp_reward", label: "XP Reward", type: "number", min: 0 },
+  { name: "duration_seconds", label: "Thời lượng (giây)", type: "number", min: 0 },
+];
+
+// --- COMPONENT CON: Chỉ hiển thị list skill ---
 function LessonSkillList({ lessonId }) {
   const [skills, setSkills] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
@@ -51,24 +45,19 @@ function LessonSkillList({ lessonId }) {
     loadSkills();
   }, [loadSkills]);
 
-  // Hàm xóa Skill
   const handleDeleteSkill = async (skillId) => {
-    if (!window.confirm(`Bạn có chắc muốn xóa Skill ID: ${skillId}? Thao tác này sẽ xóa cả nội dung bên trong.`)) {
-      return;
-    }
+    if (!window.confirm(`Bạn có chắc muốn xóa Skill ID: ${skillId}?`)) return;
     try {
-      await api.Skills.remove(skillId); // Gọi API xóa
-      loadSkills(); // Tải lại danh sách
+      await api.Skills.remove(skillId);
+      loadSkills();
     } catch (e) {
-      alert('Xóa thất bại: ' + (e?.message || 'Lỗi không xác định'));
+      alert('Xóa thất bại: ' + (e?.message || 'Lỗi'));
     }
   };
 
   if (loading) return <CircularProgress size={24} sx={{ mx: 2 }} />;
   if (err) return <Typography color="error.main" sx={{ mx: 2 }}>{err}</Typography>;
-  if (skills.length === 0) {
-    return <Typography color="text.secondary" sx={{ mx: 2 }}>Không có skill nào.</Typography>;
-  }
+  if (skills.length === 0) return <Typography color="text.secondary" sx={{ mx: 2 }}>Trống.</Typography>;
 
   return (
     <List dense disablePadding>
@@ -78,70 +67,102 @@ function LessonSkillList({ lessonId }) {
           divider
           secondaryAction={
             <Stack direction="row" spacing={0.5}>
-              <Tooltip title="Xem chi tiết (Read-Only)">
-                <IconButton component={Link} to={`/admin/skill/${skill.id}`} size="small">
-                  <VisibilityIcon />
-                </IconButton>
+              <Tooltip title="Xem">
+                <IconButton component={Link} to={`/admin/skill/${skill.id}`} size="small"><VisibilityIcon /></IconButton>
               </Tooltip>
-              <Tooltip title="Sửa nội dung (Editor)">
-                <IconButton component={Link} to={`/admin/skill/${skill.id}/edit`} size="small">
-                  <EditIcon />
-                </IconButton>
+              <Tooltip title="Sửa">
+                <IconButton component={Link} to={`/admin/skill/${skill.id}/edit`} size="small"><EditIcon /></IconButton>
               </Tooltip>
-              <Tooltip title="Xóa Skill">
-                <IconButton onClick={() => handleDeleteSkill(skill.id)} size="small">
-                  <DeleteIcon />
-                </IconButton>
+              <Tooltip title="Xóa">
+                <IconButton onClick={() => handleDeleteSkill(skill.id)} size="small"><DeleteIcon /></IconButton>
               </Tooltip>
             </Stack>
           }
         >
-          <ListItemText
-            primary={skill.title}
-            secondary={`ID: ${skill.id} | Loại: ${skill.type}`}
-          />
+          <ListItemText primary={skill.title} secondary={`ID: ${skill.id} | ${skill.type}`} />
         </ListItem>
       ))}
     </List>
   );
 }
-// --- HẾT COMPONENT CON ---
 
-
-// ===== COMPONENT CHÍNH: TopicDetail =====
+// ===== COMPONENT CHÍNH =====
 export default function TopicDetail() {
-  const { id } = useParams(); // ID của Topic
+  const { id } = useParams(); // Topic ID
 
   const [topic, setTopic] = React.useState(null);
   const [lessons, setLessons] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [err, setErr] = React.useState('');
 
-  React.useEffect(() => {
-    let cancel = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setErr('');
-        const topicData = await api.Topics.get(id, { ttl: 0 });
-        if (cancel) return;
-        setTopic(topicData);
+  // State cho tạo lesson mới (CHUYỂN VỀ ĐÂY)
+  const [createOpen, setCreateOpen] = React.useState(false);
+  const [creating, setCreating] = React.useState(false);
+  const [initData, setInitData] = React.useState({});
 
-        const lessonData = await api.Topics.lessons(id, { page_size: 200 }, { ttl: 0 });
-        if (cancel) return;
-        setLessons(lessonData || []);
-        
-      } catch (e) {
-        if (cancel) return;
-        setErr(e?.message || 'Failed to load topic detail');
-      } finally {
-        if (!cancel) setLoading(false);
-      }
-    })();
-    return () => { cancel = true; };
+  const loadData = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setErr('');
+      const topicData = await api.Topics.get(id, { ttl: 0 });
+      setTopic(topicData);
+      const lessonData = await api.Topics.lessons(id, { page_size: 200 }, { ttl: 0 });
+      setLessons(lessonData || []);
+    } catch (e) {
+      setErr(e?.message || 'Failed to load topic detail');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  if (loading) return <Box sx={{ p: 2 }}><CircularProgress /></Box>;
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Handler mở form
+  const handleOpenCreate = () => {
+    const maxOrder = lessons.reduce((max, l) => Math.max(max, l.order || 0), 0);
+    setInitData({
+      title: "",
+      order: maxOrder + 1,
+      xp_reward: 10,
+      duration_seconds: 120,
+    });
+    setCreateOpen(true);
+  };
+
+  // Handler submit
+  const handleCreateSubmit = async (patch) => {
+    const payload = { ...initData, ...patch };
+    if (!payload.title) {
+      alert("Vui lòng nhập tiêu đề!");
+      return;
+    }
+    try {
+      setCreating(true);
+      // Gọi API POST /topics/{id}/lessons/
+      await api.Topics.createLesson(id, payload);
+      setCreateOpen(false);
+      loadData(); // Reload list
+    } catch (e) {
+      console.error(e);
+      alert("Tạo thất bại: " + (e?.message || "Lỗi không xác định"));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId) => {
+    if(!window.confirm("Xóa Lesson này?")) return;
+    try {
+      await api.Lessons.remove(lessonId);
+      loadData();
+    } catch(e) {
+      alert("Xóa thất bại");
+    }
+  }
+
+  if (loading && !topic) return <Box sx={{ p: 2 }}><CircularProgress /></Box>;
   if (err) return <Box sx={{ p: 2, color: 'error.main' }}>{err}</Box>;
 
   return (
@@ -159,38 +180,47 @@ export default function TopicDetail() {
           </Button>
         </Stack>
       </Stack>
-      
       <Divider />
 
-      {/* Danh sách Lessons (dạng Accordion) */}
+      {/* Danh sách Lessons */}
       <Paper sx={{ p: 2, borderRadius: 2 }}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography fontWeight={700}>
-            Danh sách Lessons ({lessons.length})
-          </Typography>
-          <Button startIcon={<AddIcon />} size="small" variant="contained">
-            Thêm Lesson mới (TODO)
+          <Typography fontWeight={700}>Danh sách Lessons ({lessons.length})</Typography>
+          <Button startIcon={<AddIcon />} size="small" variant="contained" onClick={handleOpenCreate}>
+            Thêm Lesson mới
           </Button>
         </Stack>
         
-        {lessons.length === 0 && (
-          <Typography color="text.secondary">Chưa có lesson nào cho topic này.</Typography>
-        )}
+        {lessons.length === 0 && <Typography color="text.secondary">Chưa có lesson nào.</Typography>}
         
         {lessons.map((lesson) => (
           <Accordion key={lesson.id} TransitionProps={{ unmountOnExit: true }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography fontWeight={500}>{lesson.title}</Typography>
-              <Chip label={`Order: ${lesson.order}`} size="small" sx={{ ml: 2 }} />
+              <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%', pr: 2 }}>
+                <Typography fontWeight={500} sx={{ flex: 1 }}>{lesson.title}</Typography>
+                <Chip label={`Order: ${lesson.order}`} size="small" />
+                <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteLesson(lesson.id); }}>
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </Stack>
             </AccordionSummary>
             <AccordionDetails sx={{ p: 0 }}>
-              {/* Component con tự tải Skills khi được mở */}
-              
+              {/* Sử dụng component LessonEditor nếu muốn full chức năng, hoặc LessonSkillList đơn giản */}
               <LessonEditor lessonId={lesson.id} />
             </AccordionDetails>
           </Accordion>
         ))}
       </Paper>
+
+      <UniversalEditor
+        open={createOpen}
+        title="Tạo Lesson Mới"
+        loading={creating}
+        initialValues={initData}
+        fields={CREATE_LESSON_FIELDS}
+        onClose={() => setCreateOpen(false)}
+        onSubmit={handleCreateSubmit}
+      />
     </Box>
   );
 }

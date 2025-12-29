@@ -9,7 +9,7 @@ const DEBUG =
   (typeof window !== "undefined" && localStorage.getItem("debug_api") === "1");
 
 const kLessons = (abbr, topicId) =>
-  `lessons.${abbr || "unknown"}.${topicId || "none"}.v2`; // bump key vì có progress
+  `lessons.${abbr || "unknown"}.${topicId || "none"}.v2`; 
 const getCachedLessons = (abbr, topicId) => {
   try {
     const raw = localStorage.getItem(kLessons(abbr, topicId));

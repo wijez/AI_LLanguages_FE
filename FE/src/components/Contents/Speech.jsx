@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic,
   Square,
@@ -10,12 +11,19 @@ import {
   Activity,
   Loader2,
   Info,
-  Sparkles,
   ListFilter,
+  ChevronDown,
+  CheckCircle2,
+  XCircle,
+  RefreshCcw,
+  Clock,
+  X,
+  CalendarDays,
+  BarChart2
 } from "lucide-react";
 import { api } from "../../api/api";
 
-// ===== Helpers =====
+// ===== Helpers & Components =====
 const clsx = (...xs) => xs.filter(Boolean).join(" ");
 const ms = (n) => (n < 10 ? `0${n}` : `${n}`);
 const fmtDuration = (secs) =>
@@ -32,62 +40,75 @@ const parseJSON = (s) => {
   }
 };
 
-// Đọc `learn` (L2) từ localStorage: có thể là string code, hoặc object có abbreviation/code...
+function ColoredWord({ word, score }) {
+  let colorClass = "text-rose-600";
+  if (score >= 80) colorClass = "text-emerald-600";
+  else if (score >= 50) colorClass = "text-amber-600";
+
+  return (
+    <span className={clsx("mx-1 font-medium relative group cursor-default", colorClass)}>
+      {word}
+      <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+        {Math.round(score)}
+      </span>
+    </span>
+  );
+}
+
+// --- Motion Variants ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+};
+const pulseVariants = {
+  pulse: {
+    scale: [1, 1.05, 1],
+    boxShadow: [
+      "0 0 0 0 rgba(220, 38, 38, 0.4)",
+      "0 0 0 10px rgba(220, 38, 38, 0)",
+      "0 0 0 0 rgba(220, 38, 38, 0)",
+    ],
+    transition: { duration: 1.5, repeat: Infinity },
+  },
+};
+
+// --- Logic Helpers ---
 function readLearn() {
   if (typeof window === "undefined") return { lang: null, enrollmentId: null };
   const raw = localStorage.getItem("learn");
   if (!raw) return { lang: null, enrollmentId: null };
-
   const obj = parseJSON(raw);
   if (obj && typeof obj === "object") {
-    const lang =
-      obj?.language?.abbreviation ||
-      obj?.language?.code ||
-      obj?.language_code ||
-      obj?.abbreviation ||
-      obj?.code ||
-      (typeof obj?.language === "string" ? obj.language : null) ||
-      null;
-
-    const enrollmentId =
-      obj?.enrollment_id || obj?.id || obj?.enrollment?.id || null;
-
+    const lang = obj?.language?.abbreviation || obj?.language?.code || obj?.language_code || obj?.abbreviation || obj?.code || (typeof obj?.language === "string" ? obj.language : null) || null;
+    const enrollmentId = obj?.enrollment_id || obj?.id || obj?.enrollment?.id || null;
     return { lang, enrollmentId };
   }
   return { lang: raw.toString().trim() || null, enrollmentId: null };
 }
 
-// Lấy câu chuẩn (answer) để đọc/chấm: ưu tiên expected_text/answer
 function getExpectedText(p) {
   const cands = [p?.expected_text, p?.answer, p?.text, p?.phrase, p?.word];
   const s = cands.find((x) => typeof x === "string" && x.trim());
   return s ? s.trim() : "";
 }
 
-// Chuyển Blob -> base64 (không kèm "data:*;base64,")
-function blobToBase64(blob) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onloadend = () => {
-      const res = typeof r.result === "string" ? r.result : "";
-      const base64 = res.includes(",") ? res.split(",")[1] : res;
-      resolve(base64);
-    };
-    r.onerror = reject;
-    r.readAsDataURL(blob);
-  });
+function toApiOriginMediaUrl(url) {
+  if (!url) return "";
+  try {
+    if (url.startsWith("http")) return url;
+    const apiBase = new URL(api.baseURL);
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return `${apiBase.origin}${path}`;
+  } catch {
+    return url;
+  }
 }
 
-// Centralize endpoints cho view
-const ENDPOINTS = {
-  listPronSkillsByLanguage: (code) =>
-    `/skills/?type=pron&language=${encodeURIComponent(code)}&limit=50`,
-  listPronSkills: () => `/skills/?type=pron&limit=50`,
-  promptsLegacy: (skillId) => `/pronunciation-prompts/?skill=${skillId}`,
-  skillQuestions: (skillId) => `/skills/${skillId}/questions/`,
-  // (đã chuyển sang api.SkillSessions.* cho start/complete/attempts)
-};
-
+// --- Hook Recorder ---
 function useRecorder({ mimeType = "audio/webm" } = {}) {
   const [recording, setRecording] = useState(false);
   const [permission, setPermission] = useState(null);
@@ -131,28 +152,15 @@ function useRecorder({ mimeType = "audio/webm" } = {}) {
   };
 
   const reset = () => setBlob(null);
-
   return { recording, permission, blob, elapsed, start, stop, reset };
 }
 
 function ScoreBadge({ score }) {
-  const color =
-    score >= 90
-      ? "bg-emerald-500"
-      : score >= 75
-      ? "bg-sky-500"
-      : score >= 60
-      ? "bg-amber-500"
-      : "bg-rose-500";
+  const color = score >= 80 ? "bg-emerald-500" : score >= 60 ? "bg-amber-500" : "bg-rose-500";
   return (
-    <div
-      className={clsx(
-        "inline-flex items-center px-2 py-1 rounded-full text-white text-xs font-semibold",
-        color
-      )}
-    >
+    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className={clsx("inline-flex items-center px-2 py-1 rounded-full text-white text-xs font-semibold shadow-sm", color)}>
       <Award className="w-3.5 h-3.5 mr-1" /> {Math.round(score)}
-    </div>
+    </motion.div>
   );
 }
 
@@ -168,189 +176,49 @@ function StatChip({ icon: Icon, label, value }) {
 
 function ProgressBar({ value }) {
   const v = Math.max(0, Math.min(100, Math.round(value ?? 0)));
-  const bar =
-    v >= 90
-      ? "bg-emerald-500"
-      : v >= 75
-      ? "bg-sky-500"
-      : v >= 60
-      ? "bg-amber-500"
-      : "bg-rose-500";
+  const bar = v >= 80 ? "bg-emerald-500" : v >= 60 ? "bg-amber-500" : "bg-rose-500";
   return (
-    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-      <div className={clsx("h-2", bar)} style={{ width: `${v}%` }} />
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mt-2">
+      <motion.div className={clsx("h-2", bar)} initial={{ width: 0 }} animate={{ width: `${v}%` }} transition={{ duration: 1, ease: "easeOut" }} />
     </div>
   );
 }
 
-export default function Speech({
-  languageCode: propLang,
-  enrollmentId: propEnrollId,
-  skillId: propSkillId,
-}) {
+// ===== MAIN COMPONENT =====
+export default function Speech({ languageCode: propLang, enrollmentId: propEnrollId, skillId: propSkillId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ===== Separate UI lang (L1) vs Learning lang (L2) =====
-  const [uiLang, setUiLang] = useState(null); // from localStorage.lang
-  const [learnLang, setLearnLang] = useState(null); // from localStorage.learn (or props)
-  const [ctxEnrollId, setCtxEnrollId] = useState(null); // enrollment_id
+  const [uiLang, setUiLang] = useState(null);
+  const [learnLang, setLearnLang] = useState(null);
+  const [ctxEnrollId, setCtxEnrollId] = useState(null);
 
-  // Data
   const [skills, setSkills] = useState([]);
   const [selectedSkillId, setSelectedSkillId] = useState(null);
-  const selectedSkill = useMemo(
-    () => skills.find((s) => String(s.id) === String(selectedSkillId)) || null,
-    [skills, selectedSkillId]
-  );
+  const selectedSkill = useMemo(() => skills.find((s) => String(s.id) === String(selectedSkillId)) || null, [skills, selectedSkillId]);
 
   const [prompts, setPrompts] = useState([]);
   const [idx, setIdx] = useState(0);
 
-  const [session, setSession] = useState(null); // {id, skill_session, started_at}
+  const [session, setSession] = useState(null);
   const [history, setHistory] = useState([]);
   const [xpTotal, setXpTotal] = useState(0);
-
   const [submitting, setSubmitting] = useState(false);
+  const [restoringSession, setRestoringSession] = useState(true);
+
+  // Modal History
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [pastSessions, setPastSessions] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const audioRef = useRef(null);
-  const ttsUrlRef = useRef(null); // revoke để tránh leak
+  const ttsUrlRef = useRef(null);
   const initialSkillFromQuery = getQuery("skill");
 
-  const { recording, permission, blob, elapsed, start, stop, reset } =
-    useRecorder();
+  const { recording, permission, blob, elapsed, start, stop, reset } = useRecorder();
   const current = prompts[idx] || null;
 
-  // ===== Resolve L1 (UI) & L2 (Learning) + enrollment_id (ONLY from localStorage.learn) =====
-  useEffect(() => {
-    (async () => {
-      // L1 = ngôn ngữ giao diện
-      let L1 =
-        (typeof window !== "undefined" && localStorage.getItem("lang")) || null;
-
-      // L2 + enrollment từ learn
-      const { lang: L2raw, enrollmentId: eidFromLearn } = readLearn();
-      let L2 = (L2raw || "").trim();
-      let eid = eidFromLearn ? String(eidFromLearn) : null;
-
-      // Nếu chưa có enrollment_id trong learn => resolve theo abbreviation L2
-      if (!eid && L2) {
-        try {
-          let data =
-            (await api.Enrollments.findByAbbr(L2)) ||
-            (await api.Enrollments.findByLangCode(L2)) ||
-            (await api.Enrollments.findByCodeAlias(L2));
-          const first =
-            (data && data.results && data.results[0]) ||
-            (Array.isArray(data) ? data[0] : data);
-          if (first?.id) eid = String(first.id);
-        } catch {
-          /* ignore */
-        }
-      }
-
-      if (!L1) L1 = "en"; // fallback giao diện
-      if (!L2) L2 = "en"; // fallback học (nếu learn trống)
-
-      if (typeof window !== "undefined" && eid) {
-        localStorage.setItem("enrollment_id", String(eid));
-      }
-
-      setUiLang(L1);
-      setLearnLang(L2);
-      setCtxEnrollId(eid || null);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Tự cập nhật khi user đổi lang/learn ở tab khác hoặc runtime
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === "lang" || e.key === "learn") {
-        const L1 = localStorage.getItem("lang") || "en";
-        const { lang: L2raw, enrollmentId } = readLearn();
-        const L2 = (L2raw || "en").trim();
-        setUiLang(L1);
-        setLearnLang(L2);
-        setCtxEnrollId(enrollmentId ? String(enrollmentId) : null);
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // ===== Load PRON skills (by L2 from localStorage.learn) =====
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError("");
-      try {
-        let list = [];
-        if (learnLang) {
-          try {
-            const sres = await api.get(
-              ENDPOINTS.listPronSkillsByLanguage(learnLang)
-            );
-            list = sres?.results || sres || [];
-          } catch {
-            const sres = await api.get(ENDPOINTS.listPronSkills());
-            list = sres?.results || sres || [];
-          }
-        } else {
-          const sres = await api.get(ENDPOINTS.listPronSkills());
-          list = sres?.results || sres || [];
-        }
-
-        setSkills(list);
-        const fromQuery = initialSkillFromQuery
-          ? String(initialSkillFromQuery)
-          : null;
-        const preferred = fromQuery || (list[0] ? String(list[0].id) : null);
-        setSelectedSkillId(preferred);
-        if (preferred && typeof window !== "undefined")
-          localStorage.setItem("pron_skill_id", preferred);
-      } catch (e) {
-        console.warn(e);
-        setError(
-          e?.response?.data?.detail || e.message || "Lỗi tải danh sách kỹ năng"
-        );
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [learnLang]);
-
-  // ===== Load prompts when skill changes =====
-  useEffect(() => {
-    (async () => {
-      if (!selectedSkillId) return;
-      setLoading(true);
-      setError("");
-      try {
-        let list = [];
-        try {
-          const qres = await api.Skills.questions(selectedSkillId);
-          list = qres?.pronunciation_prompts || [];
-        } catch {
-          const pres = await api.get(ENDPOINTS.promptsLegacy(selectedSkillId));
-          list = pres?.results || pres || [];
-        }
-        setPrompts(list);
-        setIdx(0);
-      } catch (e) {
-        console.warn(e);
-        setPrompts([]);
-        setError(
-          e?.response?.data?.detail || e.message || "Lỗi tải prompt cho kỹ năng"
-        );
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [selectedSkillId]);
-
-  // ===== Helpers: history from server =====
+  // --- Mapper ---
   const mapAttempt = (a) => ({
     id: a.id,
     prompt_id: a.prompt_id,
@@ -361,34 +229,151 @@ export default function Speech({
     cer: a?.details?.cer,
     at: a.created_at,
     audio_path: a.audio_path,
+    xp: a.xp || a.xp_awarded || 0,
+    words: a.words || [],
   });
 
-  const loadAttempts = async (sid) => {
+  // 1. Init Auth & Lang
+  useEffect(() => {
+    (async () => {
+      let L1 = (typeof window !== "undefined" && localStorage.getItem("lang")) || "en";
+      const { lang: L2raw, enrollmentId: eidFromLearn } = readLearn();
+      let L2 = (L2raw || "").trim() || "en";
+      let eid = eidFromLearn ? String(eidFromLearn) : null;
+
+      if (!eid && L2) {
+        try {
+          let data = (await api.Enrollments.findByAbbr(L2)) || (await api.Enrollments.findByLangCode(L2));
+          const first = Array.isArray(data?.results) ? data.results[0] : (Array.isArray(data) ? data[0] : data);
+          if (first?.id) eid = String(first.id);
+        } catch {}
+      }
+      if (typeof window !== "undefined" && eid) localStorage.setItem("enrollment_id", String(eid));
+
+      setUiLang(L1);
+      setLearnLang(L2);
+      setCtxEnrollId(eid);
+    })();
+  }, []);
+
+  // 2. Restore Session
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (typeof window === "undefined") return;
+      const savedSid = localStorage.getItem("current_pron_session_id");
+      if (!savedSid) {
+        setRestoringSession(false);
+        return;
+      }
+
+      try {
+        const res = await api.SkillSessions.get(savedSid);
+        if (res && res.status === 'in_progress') {
+          setSession(res);
+          if (res.skill) {
+            setSelectedSkillId(String(res.skill));
+            localStorage.setItem("pron_skill_id", String(res.skill));
+          }
+          try {
+            const attemptsRes = await api.SkillSessions.attempts(savedSid);
+            const mapped = Array.isArray(attemptsRes) ? attemptsRes.map(mapAttempt) : [];
+            setHistory(mapped);
+            const total = mapped.reduce((acc, curr) => acc + (curr.xp || 0), 0);
+            setXpTotal(total);
+          } catch (errAtt) {
+            console.warn("Không tải được attempts cũ", errAtt);
+          }
+        } else {
+          localStorage.removeItem("current_pron_session_id");
+        }
+      } catch (e) {
+        console.warn("Không thể khôi phục session cũ:", e);
+        localStorage.removeItem("current_pron_session_id");
+      } finally {
+        setRestoringSession(false);
+      }
+    };
+    restoreSession();
+  }, []);
+
+  // 3. Load Skills
+  useEffect(() => {
+    if (!learnLang) return;
+    (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        let list = [];
+        const sres = await api.Skills.list({ type: 'pron', language: learnLang, limit: 50 });
+        list = sres?.results || sres || [];
+        setSkills(list);
+
+        if (!selectedSkillId && !session) {
+          const fromQuery = initialSkillFromQuery ? String(initialSkillFromQuery) : null;
+          const fromStorage = typeof window !== "undefined" ? localStorage.getItem("pron_skill_id") : null;
+          const preferred = fromQuery || fromStorage || (list[0] ? String(list[0].id) : null);
+          setSelectedSkillId(preferred);
+        }
+      } catch (e) {
+        setError("Lỗi tải danh sách kỹ năng");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [learnLang]);
+
+  // 4. Load Prompts
+  useEffect(() => {
+    (async () => {
+      if (!selectedSkillId) return;
+      try {
+        let list = [];
+        try {
+          const qres = await api.Skills.questions(selectedSkillId);
+          list = qres?.pronunciation_prompts || [];
+        } catch {
+          if (api.PronunciationPrompts) {
+            const pres = await api.PronunciationPrompts.list({ skill: selectedSkillId });
+            list = pres?.results || pres || [];
+          }
+        }
+        setPrompts(list);
+        setIdx(0);
+      } catch (e) {
+        setPrompts([]);
+      }
+    })();
+  }, [selectedSkillId]);
+
+  // ===== FETCH GLOBAL HISTORY =====
+  const handleOpenHistory = async () => {
+    if (!ctxEnrollId) return;
+    setShowHistoryModal(true);
+    setLoadingHistory(true);
     try {
-      const id = sid || session?.id;
-      if (!id) return;
-      const ats = await api.SkillSessions.attempts(id);
-      const mapped = Array.isArray(ats) ? ats.map(mapAttempt) : [];
-      setHistory(mapped);
+      const res = await api.SkillSessions.list({ 
+          enrollment: ctxEnrollId, 
+          ordering: '-started_at' 
+      });
+      setPastSessions(res.results || res || []);
     } catch (e) {
-      // không chặn UI
-      console.warn("Load attempts failed", e);
+      console.warn("Lỗi tải lịch sử:", e);
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
-  // ===== Session controls =====
+  // ===== ACTIONS =====
   const handleStartSession = async () => {
     try {
-      const payload = {
-        skill: selectedSkill?.id,
-        enrollment: ctxEnrollId,
-        // lesson: optional (null)
-      };
+      const payload = { skill: selectedSkill?.id, enrollment: ctxEnrollId };
       const res = await api.SkillSessions.start(payload);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("current_pron_session_id", String(res.id));
+      }
       setSession(res);
       setHistory([]);
       setXpTotal(0);
-      await loadAttempts(res?.id);
     } catch (e) {
       setError(e?.response?.data?.detail || "Không thể bắt đầu phiên học");
     }
@@ -399,600 +384,480 @@ export default function Speech({
       if (session?.id)
         await api.SkillSessions.complete(session.id, { final_xp: xpTotal || 0 });
     } catch {
-      // non-blocking
     } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("current_pron_session_id");
+      }
       setSession(null);
       setHistory([]);
     }
   };
 
-  // ===== Submit attempt (multipart + timeout dài + fallback base64) =====
+  // === SUBMIT LOGIC ===
   const submitAttempt = async () => {
-    if (!current) return;
-    if (!blob) return;
+    if (!current || !blob) return;
     setSubmitting(true);
     setError("");
-
     const expected = getExpectedText(current);
-    const commonMeta = {
-      prompt_id: current?.id ? String(current.id) : undefined,
-      // QUAN TRỌNG: server mong đợi skill_session (string), không phải id numeric
-      skill_session:
-        session?.skill_session ? String(session.skill_session) : undefined,
-      skill_id: selectedSkill?.id ? String(selectedSkill.id) : undefined,
-      enrollment_id: ctxEnrollId ? String(ctxEnrollId) : undefined,
-      language_code: learnLang || "en",
-      lang: learnLang || "en",
-    };
+    
+    const fd = new FormData();
+    fd.append("audio", new File([blob], "audio.webm", { type: blob.type }));
+    fd.append("expected_text", expected);
+    fd.append("language_code", learnLang || "en"); 
 
     try {
-      // Cách 1: gửi file (multipart) với timeout dài hơn
-      const fd = new FormData();
-      const file = new File(
-        [blob],
-        `pron-${selectedSkillId || "skill"}-${Date.now()}.webm`,
-        { type: blob.type || "audio/webm" }
-      );
-      fd.append("audio", file);
-      fd.append("expected_text", expected);
-      if (commonMeta.prompt_id) fd.append("prompt_id", commonMeta.prompt_id);
-      if (commonMeta.skill_session) fd.append("skill_session", commonMeta.skill_session);
-      if (commonMeta.skill_id) fd.append("skill_id", commonMeta.skill_id);
-      if (commonMeta.enrollment_id)
-        fd.append("enrollment_id", commonMeta.enrollment_id);
-      fd.append("language_code", commonMeta.language_code);
-      fd.append("lang", commonMeta.lang);
-
-      const res = await api.SpeechPron.up(fd, {
+      const resScore = await api.SpeechPron.up(fd, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 120000, // ⏳ tăng riêng cho request nặng
+        timeout: 60000,
       });
 
-      // BE mới trả "recognized", "details"…
-      const r = {
-        id: crypto?.randomUUID?.() || `${Date.now()}`,
-        prompt_id: current.id,
-        expected,
-        recognized: res?.recognized || res?.recognized_text || res?.text || "",
-        score_overall: res?.score_overall ?? res?.score ?? 0,
-        wer:
-          (typeof res?.details?.wer === "number" && res?.details?.wer) ??
-          res?.meta?.wer ??
-          res?.wer,
-        cer:
-          (typeof res?.details?.cer === "number" && res?.details?.cer) ??
-          res?.meta?.cer ??
-          res?.cer,
-        alignment: res?.details?.alignment ?? res?.alignment,
-        mistakes: res?.mistakes || res?.mispronounced_words || [],
-        xp: res?.xp_awarded || 0,
-        model: res?.ai_model || res?.model_version || null,
-        at: new Date().toISOString(),
+      const audioPath = resScore.debug_upload?.saved_path || resScore.saved_path || ""; 
+      
+      const payloadToSave = {
+          prompt_id: current.id,
+          expected_text: expected,
+          recognized: resScore.recognized || "", 
+          score_overall: resScore.score_overall,
+          words: resScore.words || [],
+          details: resScore.details,
+          audio_path: audioPath
       };
-      // Optimistic UI
-      setHistory((h) => [r, ...h]);
-      setXpTotal((x) => x + (r.xp || 0));
 
-      // Đồng bộ lại từ server (đã ghi PronAttempt)
-      await loadAttempts();
-    } catch (e) {
-      // Nếu lỗi do timeout → fallback gửi base64 JSON
-      if (e?.code === "ECONNABORTED") {
-        try {
-          const audio_base64 = await blobToBase64(blob);
-          const payload = {
-            audio_base64,
-            expected_text: expected,
-            language_code: commonMeta.language_code,
-            lang: commonMeta.lang,
-            ...(commonMeta.prompt_id ? { prompt_id: commonMeta.prompt_id } : {}),
-            ...(commonMeta.skill_session ? { skill_session: commonMeta.skill_session } : {}),
-            ...(commonMeta.skill_id ? { skill_id: commonMeta.skill_id } : {}),
-            ...(commonMeta.enrollment_id
-              ? { enrollment_id: commonMeta.enrollment_id }
-              : {}),
-          };
-
-          const res = await api.post("/speech/pron/up/", payload, {
-            headers: { "Content-Type": "application/json" },
-            timeout: 120000,
-          });
-
-          const r = {
-            id: crypto?.randomUUID?.() || `${Date.now()}`,
-            prompt_id: current.id,
-            expected,
-            recognized: res?.recognized || res?.recognized_text || res?.text || "",
-            score_overall: res?.score_overall ?? res?.score ?? 0,
-            wer:
-              (typeof res?.details?.wer === "number" && res?.details?.wer) ??
-              res?.meta?.wer ??
-              res?.wer,
-            cer:
-              (typeof res?.details?.cer === "number" && res?.details?.cer) ??
-              res?.meta?.cer ??
-              res?.cer,
-            alignment: res?.details?.alignment ?? res?.alignment,
-            mistakes: res?.mistakes || res?.mispronounced_words || [],
-            xp: res?.xp_awarded || 0,
-            model: res?.ai_model || res?.model_version || null,
-            at: new Date().toISOString(),
-          };
-          setHistory((h) => [r, ...h]);
-          setXpTotal((x) => x + (r.xp || 0));
-
-          await loadAttempts();
-        } catch (e2) {
-          setError(
-            e2?.response?.data?.detail || "Chấm điểm thất bại (base64)."
-          );
-        }
-      } else {
-        setError(e?.response?.data?.detail || "Chấm điểm thất bại.");
+      if (session?.id) {
+          const updatedSession = await api.post(`/skill_sessions/${session.id}/save_attempt/`, payloadToSave);
+          setSession(updatedSession);
       }
+
+      const newHistoryItem = mapAttempt({
+          id: Date.now(),
+          prompt_id: current.id,
+          expected_text: expected,
+          ...payloadToSave, 
+          created_at: new Date().toISOString()
+      });
+      
+      setHistory((prev) => [newHistoryItem, ...prev]);
+      
+      const xpGain = (resScore.score_overall >= 80) ? 1 : 0; 
+      setXpTotal((prev) => prev + xpGain);
+
+    } catch (e) {
+      console.error(e);
+      setError("Chấm điểm thất bại. Vui lòng thử lại.");
     } finally {
       setSubmitting(false);
       reset();
     }
   };
 
-  const last = history[0] || null;
+  const playRefAudio = async (targetPrompt = null) => {
+    const p = targetPrompt || current;
+    if (!p) return;
 
-  function toApiOriginMediaUrl(url) {
-    try {
-      const u = new URL(url);
-      const path = u.pathname + (u.search || "");
-      const apiBase = new URL(api.baseURL);
-      return `${apiBase.origin}${path.startsWith("/") ? path : `/${path}`}`;
-    } catch {
-      return url;
+    const existingAudio = p.audio || p.audio_url || p.file || p.audio_file;
+    if (existingAudio) {
+      const fullUrl = toApiOriginMediaUrl(existingAudio);
+      if (audioRef.current) {
+        audioRef.current.src = fullUrl;
+        audioRef.current.load();
+        audioRef.current.play().catch(e => console.warn(e));
+      }
+      return;
     }
-  }
 
-  // ===== Play reference audio (ưu tiên URL cache → fallback base64) =====
-  const playRefAudio = async () => {
-    if (!current) return;
-    const expected = getExpectedText(current);
+    const expected = getExpectedText(p);
     if (!expected) return;
 
-    // cleanup objectURL cũ
     if (ttsUrlRef.current) {
-      URL.revokeObjectURL(ttsUrlRef.current);
-      ttsUrlRef.current = null;
+        URL.revokeObjectURL(ttsUrlRef.current);
+        ttsUrlRef.current = null;
     }
 
     try {
-      // 🔄 CHỈ ĐỔI ENDPOINT: từ /speech/tts/ → /speech/pron/tts/ (truyền prompt_id để BE cache)
-      const res = await api.instance.post(
-        "/speech/pron/tts/",
-        { prompt_id: current?.id, lang: learnLang || "en" },
-        {
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          timeout: 60000,
-        }
-      );
-
-      const data = res?.data || {};
-      const urlAny = (data.url || data.audio_url || "").trim();
-      const b64 = data.audio_base64;
-      const mime = String(data.mimetype || data.mime_type || "audio/mpeg");
-
-      // 1) ƯU TIÊN: URL (đã cache)
-      if (urlAny) {
-        const norm = toApiOriginMediaUrl(urlAny);
-        try {
-          const blobRes = await api.instance.get(norm, {
-            responseType: "blob",
-            timeout: 60000,
-          });
-          const blob = blobRes?.data;
-          if (!(blob instanceof Blob)) throw new Error("Prefetch TTS is not Blob");
-          const obj = URL.createObjectURL(blob);
-          ttsUrlRef.current = obj;
+      const data = await api.SpeechPron.ttsPrompt(p.id, learnLang || "en");
+      
+      if (data.audio_base64) {
+          const mime = data.mimetype || "audio/mpeg";
+          const d = `data:${mime};base64,${data.audio_base64}`;
           if (audioRef.current) {
-            audioRef.current.src = obj;
-            audioRef.current.load();
-            await audioRef.current.play();
+             audioRef.current.src = d;
+             audioRef.current.play();
           }
-          return;
-        } catch (e1) {
-          console.warn("[TTS] Prefetch audio url failed", e1);
-        }
+      } else if (data.url || data.audio_url) {
+          const u = toApiOriginMediaUrl(data.url || data.audio_url);
+          if (audioRef.current) {
+             audioRef.current.src = u;
+             audioRef.current.play();
+          }
       }
-
-      // 2) Fallback: base64
-      if (typeof b64 === "string" && b64.trim()) {
-        const dataUrl = `data:${mime};base64,${b64.trim()}`;
-        if (audioRef.current) {
-          audioRef.current.src = dataUrl;
-          audioRef.current.load();
-          await audioRef.current.play();
-        }
-        return;
-      }
-
-      throw new Error("TTS JSON thiếu/không phát được: url & audio_base64");
     } catch (e) {
-      console.warn("Play audio failed", e);
+      console.warn("TTS failed", e);
     }
   };
 
-  useEffect(() => {
-    // cleanup khi unmount
-    return () => {
-      if (ttsUrlRef.current) {
-        URL.revokeObjectURL(ttsUrlRef.current);
-        ttsUrlRef.current = null;
-      }
-    };
-  }, []);
-
-  // ===== Render =====
-  if (loading && !skills.length && !prompts.length) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-[60vh]">
-        <div className="flex items-center gap-3 text-gray-500">
-          <Loader2 className="w-5 h-5 animate-spin" /> Đang tải trang phát âm…
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-700 flex items-start gap-3">
-          <Info className="w-5 h-5 mt-0.5" />
-          <div>
-            <div className="font-semibold mb-1">Lỗi</div>
-            <div>{error}</div>
+  if (restoringSession) {
+      return (
+          <div className="flex h-screen items-center justify-center bg-gray-50">
+              <div className="text-center">
+                  <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-3"/>
+                  <p className="text-gray-500">Đang khôi phục phiên học...</p>
+              </div>
           </div>
-        </div>
-      </div>
-    );
+      );
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Phát âm</h1>
-          {selectedSkill && (
+    <div className="p-4 md:p-6 max-w-6xl mx-auto min-h-screen relative">
+      {/* HEADER */}
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 sticky top-0 bg-white/90 backdrop-blur-md z-10 py-2 border-b border-gray-100"
+      >
+        <motion.div variants={itemVariants}>
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Phát âm</h1>
+          {selectedSkill ? (
             <div className="mt-1 text-sm text-gray-500">
-              {selectedSkill.title_i18n?.[uiLang || "en"] ||
-                selectedSkill.title ||
-                `Skill #${selectedSkill.id}`}
+              {selectedSkill.title_i18n?.[uiLang || "en"] || selectedSkill.title}
             </div>
+          ) : (
+            <div className="mt-1 text-sm text-gray-400">Chọn bài học để bắt đầu</div>
           )}
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 pl-3 pr-2 py-2 bg-white/60">
-            <ListFilter className="w-4 h-4 text-gray-500" />
-            <span className="text-xs text-gray-500">Chọn bài</span>
-            <select
-              value={selectedSkillId || ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                setSelectedSkillId(v);
-                if (typeof window !== "undefined")
-                  localStorage.setItem("pron_skill_id", v);
-              }}
-              className="text-sm bg-transparent outline-none"
-            >
-              {skills.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.title_i18n?.[uiLang || "en"] || s.title || s.id}
-                </option>
-              ))}
-            </select>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="flex items-center gap-2 flex-wrap">
+          <button 
+             onClick={handleOpenHistory}
+             className="p-2 hover:bg-gray-100 rounded-xl text-gray-600 border border-gray-200 bg-white shadow-sm flex items-center justify-center transition-colors"
+             title="Lịch sử luyện tập"
+          >
+             <Clock className="w-4 h-4"/>
+          </button>
+
+          <div className="relative group">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 pl-3 pr-8 py-2 bg-white hover:border-blue-400 transition-colors shadow-sm cursor-pointer min-w-[200px]">
+              <ListFilter className="w-4 h-4 text-gray-500" />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Chọn bài</span>
+                <select
+                  value={selectedSkillId || ""}
+                  onChange={(e) => {
+                    const newVal = e.target.value;
+                    setSelectedSkillId(newVal);
+                    if (typeof window !== "undefined")
+                      localStorage.setItem("pron_skill_id", newVal);
+                  }}
+                  className="appearance-none bg-transparent outline-none text-sm font-medium text-gray-800 w-full absolute inset-0 pl-10 cursor-pointer z-10 opacity-0"
+                  disabled={loading && !skills.length}
+                >
+                  {skills.map((s) => (
+                    <option key={s.id} value={s.id}>{s.title_i18n?.[uiLang || "en"] || s.title || s.id}</option>
+                  ))}
+                </select>
+                <span className="text-sm font-medium text-gray-800 truncate max-w-[150px]">
+                  {skills.find((s) => String(s.id) === String(selectedSkillId))?.title || "Đang tải..."}
+                </span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 pointer-events-none" />
+            </div>
           </div>
 
-          <StatChip
-            icon={Activity}
-            label="Độ khó"
-            value={selectedSkill?.difficulty ?? "-"}
-          />
-          <StatChip
-            icon={Sparkles}
-            label="XP/Phiên"
-            value={selectedSkill?.xp ?? 10}
-          />
-          <StatChip
-            icon={Info}
-            label="Thời lượng"
-            value={`${selectedSkill?.duration || 5}’`}
-          />
+          <div className="hidden md:flex gap-2">
+            <StatChip icon={Activity} label="Độ khó" value={selectedSkill?.difficulty ?? "-"} />
+            <StatChip icon={Info} label="Thời lượng" value={`${selectedSkill?.duration || 5}’`} />
+          </div>
 
           {session ? (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleFinishSession}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700 shadow-sm"
             >
-              <Square className="w-4 h-4" /> Kết thúc phiên
-            </button>
+              <Square className="w-4 h-4" /> Kết thúc
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={handleStartSession}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
-              disabled={!ctxEnrollId}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:opacity-50"
+              disabled={!ctxEnrollId || !selectedSkillId}
             >
-              <Play className="w-4 h-4" /> Bắt đầu phiên
-            </button>
+              <Play className="w-4 h-4" /> Bắt đầu
+            </motion.button>
           )}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left: Prompt list */}
-        <div className="lg:col-span-5">
-          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <div className="font-medium">Danh sách câu/ từ luyện</div>
-              <div className="text-xs text-gray-500">{prompts.length} mục</div>
-            </div>
-            <div className="max-h-[55vh] overflow-auto divide-y divide-gray-100">
-              {prompts.map((p, i) => (
-                // outer: DIV role="button" (tránh nested button)
-                <div
-                  key={p.id ?? i}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setIdx(i)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") setIdx(i);
-                  }}
-                  className={clsx(
-                    "w-full text-left px-4 py-3 hover:bg-gray-50 focus:bg-gray-50 cursor-pointer",
-                    i === idx && "bg-sky-50/60"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
+      {/* ERROR / CONTENT */}
+      {error && !prompts.length ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 text-center text-rose-600 bg-rose-50 rounded-2xl border border-rose-100">
+          <Info className="w-8 h-8 mx-auto mb-2" />
+          <p>{error}</p>
+        </motion.div>
+      ) : loading && !skills.length ? (
+        <div className="flex justify-center py-20 text-gray-400"><Loader2 className="w-8 h-8 animate-spin" /></div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Left: Prompt List */}
+          <motion.div className="lg:col-span-5" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+            <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col max-h-[70vh]">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 font-medium text-gray-700 flex justify-between">
+                <span>Danh sách câu ({prompts.length})</span>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {prompts.map((p, i) => (
+                  <div key={i} onClick={() => setIdx(i)} className={clsx("px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors flex justify-between items-start", i === idx ? "bg-blue-50 border-l-4 border-l-blue-500" : "")}>
                     <div>
-                      <div className="font-medium">
-                        {p.text || p.phrase || p.word}
-                      </div>
-                      {(p.phonetic || p.ipa) && (
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          /{p.phonetic || p.ipa}/
-                        </div>
-                      )}
-                      {p.tip && (
-                        <div className="text-xs text-amber-700 mt-1">
-                          💡 {p.tip}
-                        </div>
-                      )}
+                      <div className={clsx("font-medium", i === idx ? "text-blue-900" : "text-gray-900")}>{p.text || p.phrase || p.word}</div>
+                      <div className="text-xs text-gray-500 font-mono mt-1">/{p.phonetic || p.ipa}/</div>
                     </div>
-                    <div className="shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIdx(i);
-                          playRefAudio();
-                        }}
-                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs hover:bg-gray-50"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" /> Nghe mẫu
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {prompts.length === 0 && (
-                <div className="p-4 text-sm text-gray-500">
-                  Chưa có dữ liệu Prompt cho kỹ năng này.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Practice area */}
-        <div className="lg:col-span-7">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4">
-            {/* Current prompt header */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={idx <= 0}
-                  onClick={() => setIdx((i) => Math.max(0, i - 1))}
-                  className="p-2 rounded-xl border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  disabled={idx >= prompts.length - 1}
-                  onClick={() =>
-                    setIdx((i) => Math.min(prompts.length - 1, i + 1))
-                  }
-                  className="p-2 rounded-xl border border-gray-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="text-xs text-gray-500">
-                {idx + 1} / {prompts.length || 1}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="text-lg font-semibold">
-                {current?.text || current?.phrase || current?.word || "—"}
-              </div>
-              {(current?.phonetic || current?.ipa) && (
-                <div className="text-sm text-gray-500">
-                  /{current?.phonetic || current?.ipa}/
-                </div>
-              )}
-            </div>
-
-            {/* Reference audio */}
-            <div className="flex items-center gap-2 mb-4">
-              <button
-                onClick={playRefAudio}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50"
-              >
-                <Volume2 className="w-4 h-4" /> Nghe mẫu
-              </button>
-              <audio ref={audioRef} preload="auto" crossOrigin="anonymous" hidden />
-            </div>
-
-            {/* Recorder */}
-            <div className="flex items-center gap-3 mb-3">
-              {!recording ? (
-                <button
-                  onClick={start}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  <Mic className="w-5 h-5" /> Bắt đầu đọc
-                </button>
-              ) : (
-                <button
-                  onClick={stop}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-rose-600 text-white hover:bg-rose-700"
-                >
-                  <Square className="w-5 h-5" /> Dừng ghi •{" "}
-                  {fmtDuration(elapsed)}
-                </button>
-              )}
-
-              {blob && (
-                <>
-                  <audio
-                    controls
-                    src={URL.createObjectURL(blob)}
-                    className="h-10"
-                  />
-                  <button
-                    disabled={submitting}
-                    onClick={submitAttempt}
-                    className={clsx(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 hover:bg-gray-50",
-                      submitting && "opacity-60 cursor-not-allowed"
-                    )}
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Đang chấm…
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4" /> Gửi chấm điểm
-                      </>
-                    )}
-                  </button>
-                </>
-              )}
-
-              {permission === false && (
-                <div className="text-sm text-rose-600">
-                  Trình duyệt bị chặn micro. Vui lòng cấp quyền microphone.
-                </div>
-              )}
-            </div>
-
-            {/* Live result */}
-            {last && (
-              <div className="rounded-xl border border-gray-200 p-4 bg-white/60">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium">Kết quả gần nhất</div>
-                  <ScoreBadge score={last.score_overall || 0} />
-                </div>
-                <ProgressBar value={last.score_overall || 0} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 text-sm">
-                  <div>
-                    <div className="text-gray-500">Expected</div>
-                    <div className="font-medium">{last.expected}</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Recognized</div>
-                    <div className="font-medium">
-                      {last.recognized || "(trống)"}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-gray-600">
-                  {typeof last.wer === "number" && (
-                    <div className="px-2 py-1 rounded-lg bg-gray-100">
-                      WER: {(last.wer * 100).toFixed(1)}%
-                    </div>
-                  )}
-                  {typeof last.cer === "number" && (
-                    <div className="px-2 py-1 rounded-lg bg-gray-100">
-                      CER: {(last.cer * 100).toFixed(1)}%
-                    </div>
-                  )}
-                  {last.xp ? (
-                    <div className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700">
-                      +{last.xp} XP
-                    </div>
-                  ) : null}
-                  {last.model && (
-                    <div className="px-2 py-1 rounded-lg bg-sky-50 text-sky-700">
-                      Model:{" "}
-                      {typeof last.model === "string"
-                        ? last.model
-                        : last.model?.name || "—"}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* History */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-medium">Lịch sử lần thử</div>
-                <div className="text-xs text-gray-500">Tổng XP: {xpTotal}</div>
-              </div>
-              <div className="space-y-2">
-                {history.map((h) => (
-                  <div
-                    key={h.id}
-                    className="rounded-lg border border-gray-200 p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-500">
-                        {new Date(h.at).toLocaleTimeString()}
-                      </div>
-                      <ScoreBadge score={h.score_overall || 0} />
-                    </div>
-                    <div className="mt-1 text-sm">
-                      <span className="text-gray-500">Expected:</span>{" "}
-                      <span className="font-medium">{h.expected}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-gray-500">Recognized:</span>{" "}
-                      <span className="font-medium">
-                        {h.recognized || "(trống)"}
-                      </span>
-                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); setIdx(i); playRefAudio(p); }} className="p-1.5 rounded-md hover:bg-blue-100 text-gray-400 hover:text-blue-600">
+                      <Volume2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 ))}
-                {history.length === 0 && (
-                  <div className="text-sm text-gray-500">
-                    Chưa có lần thử nào trong phiên này.
-                  </div>
-                )}
+                {!prompts.length && <div className="p-4 text-center text-gray-500 italic">Trống</div>}
               </div>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Right: Practice Area */}
+          <motion.div className="lg:col-span-7" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+            {current ? (
+              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="flex justify-between mb-6">
+                  <button onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0} className="p-2 hover:bg-gray-100 rounded-full disabled:opacity-30"><ChevronLeft /></button>
+                  <span className="text-sm font-mono text-gray-400 pt-2">{idx + 1}/{prompts.length}</span>
+                  <button onClick={() => setIdx((i) => Math.min(prompts.length - 1, i + 1))} disabled={idx === prompts.length - 1} className="p-2 hover:bg-gray-100 rounded-full disabled:opacity-30"><ChevronRight /></button>
+                </div>
+
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">{current.text || current.word}</h2>
+                  <p className="text-lg text-gray-500 font-mono">/{current.phonetic || current.ipa}/</p>
+                </div>
+
+                <div className="flex justify-center gap-6 mb-8">
+                  <button onClick={() => playRefAudio(current)} className="flex flex-col items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center"><Volume2 /></div>
+                    <span className="text-xs font-medium">Nghe mẫu</span>
+                  </button>
+                  <audio ref={audioRef} preload="auto" crossOrigin="anonymous" hidden />
+
+                  {!recording ? (
+                    <button onClick={start} className="flex flex-col items-center gap-2 text-gray-600 hover:text-emerald-600 transition-colors">
+                      <motion.div whileHover={{ scale: 1.1 }} className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg hover:shadow-emerald-200"><Mic size={32} /></motion.div>
+                      <span className="text-xs font-medium text-emerald-600">Ghi âm</span>
+                    </button>
+                  ) : (
+                    <button onClick={stop} className="flex flex-col items-center gap-2 text-rose-600">
+                      <motion.div variants={pulseVariants} animate="pulse" className="w-16 h-16 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg"><Square size={32} fill="currentColor" /></motion.div>
+                      <span className="text-xs font-medium">Dừng ({fmtDuration(elapsed)})</span>
+                    </button>
+                  )}
+                </div>
+
+                <AnimatePresence>
+                  {blob && !recording && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-center">
+                      <audio src={URL.createObjectURL(blob)} controls className="mx-auto mb-4 h-8" />
+                      <div className="flex justify-center gap-3">
+                        <button onClick={reset} className="px-4 py-2 rounded-full border border-gray-300 text-sm hover:bg-gray-50">Thu lại</button>
+                        <button onClick={submitAttempt} disabled={submitting} className="px-6 py-2 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-70 flex items-center gap-2">
+                          {submitting ? <Loader2 className="animate-spin w-4 h-4" /> : <Play className="w-4 h-4 fill-current" />} Chấm điểm
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* LIVE FEEDBACK */}
+                {history[0] && (history[0].id || history[0].prompt_id) && (
+                  <motion.div key={history[0].id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-sm">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm font-bold text-blue-900 flex items-center gap-2"><Activity className="w-4 h-4" /> Kết quả vừa thu</span>
+                      <ScoreBadge score={history[0].score_overall || 0} />
+                    </div>
+                    <div className="mb-4"><ProgressBar value={history[0].score_overall || 0} /></div>
+                    
+                    {/* BẠN ĐÃ NÓI (RAW RECOGNIZED) */}
+                    <div className="space-y-3">
+                      <div className="bg-white/80 p-3 rounded-xl border border-white/50">
+                         <div className="text-xs text-gray-500 uppercase font-semibold mb-1">Bạn đã nói:</div>
+                         <div className="text-lg leading-relaxed text-gray-800 font-medium">
+                            {history[0].recognized || <span className="italic text-gray-400">Không nhận diện được</span>}
+                         </div>
+                      </div>
+
+                      {/* CHI TIẾT CHẤM ĐIỂM (TARGET WORDS COLORED) */}
+                      <div className="px-3">
+                          <div className="text-xs text-gray-400 mb-1">Chi tiết chấm điểm:</div>
+                          <div className="text-lg leading-relaxed">
+                            {history[0].words && history[0].words.length > 0 ? (
+                               history[0].words.map((w, idx) => <ColoredWord key={idx} word={w.word} score={w.score} />)
+                            ) : (
+                               <span className="text-gray-500 italic">{history[0].expected}</span>
+                            )}
+                          </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* --- LOCAL SESSION HISTORY --- */}
+                <div className="mt-10 border-t border-gray-100 pt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-base font-bold text-gray-800 flex items-center gap-2"><ListFilter className="w-4 h-4"/> Lịch sử phiên tập</h3>
+                    <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full">Tổng XP: {xpTotal}</span>
+                  </div>
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    {history.map((h, index) => (
+                      <motion.div key={h.id || index} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.05 }} className="bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-colors shadow-sm">
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-mono text-gray-400">{new Date(h.at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                {h.score_overall >= 80 ? <CheckCircle2 className="w-4 h-4 text-emerald-500"/> : <XCircle className="w-4 h-4 text-rose-400"/>}
+                            </div>
+                            <ScoreBadge score={h.score_overall} />
+                        </div>
+                        
+                        {/* UPDATE HIỂN THỊ LỊCH SỬ CHO ĐÚNG LOGIC */}
+                        <div className="mb-3 space-y-2">
+                             {/* Dòng 1: User nói gì */}
+                             <div>
+                                 <span className="text-[10px] text-gray-400 uppercase font-bold mr-2">Bạn nói:</span>
+                                 <span className="text-sm text-gray-800 font-medium">
+                                     {h.recognized || <span className="italic text-gray-400">...</span>}
+                                 </span>
+                             </div>
+                             
+                             {/* Dòng 2: Mẫu câu / Chấm điểm */}
+                             <div>
+                                 <span className="text-[10px] text-gray-400 uppercase font-bold mr-2">Mẫu câu:</span>
+                                 <span className="text-sm text-gray-600">
+                                    {h.words && h.words.length > 0 ? (
+                                        h.words.map((w, idx) => <ColoredWord key={`hist-${h.id}-${idx}`} word={w.word} score={w.score} />)
+                                    ) : (
+                                        h.expected
+                                    )}
+                                 </span>
+                             </div>
+                        </div>
+
+                        {h.audio_path && (
+                            <div className="bg-gray-50 rounded-lg p-2 flex items-center gap-2 mt-2">
+                                <Volume2 className="w-3.5 h-3.5 text-gray-400"/>
+                                <audio src={toApiOriginMediaUrl(h.audio_path)} controls className="w-full h-6" style={{ height: 24 }} />
+                            </div>
+                        )}
+                      </motion.div>
+                    ))}
+                    {!history.length && <div className="text-center py-6 text-gray-400 text-sm italic">Chưa có lượt tập nào trong phiên này.</div>}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-400 bg-white rounded-2xl border border-gray-200 min-h-[400px]">Chọn một câu bên trái để luyện tập</div>
+            )}
+          </motion.div>
         </div>
-      </div>
+      )}
+
+      {/* --- MODAL GLOBAL HISTORY --- */}
+      <AnimatePresence>
+          {showHistoryModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                  <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden max-h-[80vh] flex flex-col"
+                  >
+                      <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                          <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                              <Clock className="w-5 h-5 text-blue-600"/> Lịch sử luyện tập
+                          </h3>
+                          <button onClick={() => setShowHistoryModal(false)} className="p-1 hover:bg-gray-200 rounded-full">
+                              <X className="w-5 h-5 text-gray-500"/>
+                          </button>
+                      </div>
+                      
+                      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                          {loadingHistory ? (
+                              <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-blue-500"/></div>
+                          ) : pastSessions.length === 0 ? (
+                              <div className="text-center py-10 text-gray-400">Chưa có lịch sử luyện tập.</div>
+                          ) : (
+                              <div className="space-y-3">
+                                  {pastSessions.map((item) => (
+                                      <div key={item.id} className="p-4 border border-gray-100 rounded-xl hover:border-blue-200 transition-colors flex flex-col gap-2 group bg-white shadow-sm">
+                                          <div className="flex justify-between items-start">
+                                              <div className="font-semibold text-gray-800 text-sm">
+                                                  {item.skill_title || `Skill #${item.skill}`}
+                                              </div>
+                                              <div className={clsx("text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border",
+                                                    item.status === 'completed' ? "border-emerald-200 text-emerald-600 bg-emerald-50" :
+                                                    item.status === 'failed' ? "border-rose-200 text-rose-600 bg-rose-50" : "border-gray-200 text-gray-500 bg-gray-50"
+                                               )}>
+                                                   {item.status}
+                                               </div>
+                                          </div>
+
+                                          <div className="text-xs text-gray-400 flex items-center gap-2">
+                                              <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3"/> {new Date(item.started_at).toLocaleString()}</span>
+                                              {item.lesson_title && (
+                                                  <span className="text-[10px] text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                      {item.lesson_title}
+                                                  </span>
+                                              )}
+                                          </div>
+
+                                          <div className="flex items-center justify-between pt-2 border-t border-gray-50 mt-1">
+                                              <div className="flex gap-3 text-xs">
+                                                  <div className="flex flex-col items-center">
+                                                      <span className="text-[10px] text-gray-400 uppercase">Avg</span>
+                                                      <span className="font-bold text-gray-700">{Math.round(item.avg_score || 0)}</span>
+                                                  </div>
+                                                  <div className="flex flex-col items-center border-l border-gray-100 pl-3">
+                                                      <span className="text-[10px] text-gray-400 uppercase">Attempts</span>
+                                                      <span className="font-bold text-gray-700">{item.attempts_count || 0}</span>
+                                                  </div>
+                                                  <div className="flex flex-col items-center border-l border-gray-100 pl-3">
+                                                      <span className="text-[10px] text-gray-400 uppercase">XP</span>
+                                                      <span className="font-bold text-amber-600">+{item.xp_earned}</span>
+                                                  </div>
+                                              </div>
+
+                                              <div className="text-right">
+                                                  <div className="text-[10px] text-gray-400 uppercase">Best</div>
+                                                  <div className={clsx("text-lg font-bold leading-none", 
+                                                       (item.best_score || 0) >= 80 ? "text-emerald-600" : 
+                                                       (item.best_score || 0) >= 50 ? "text-amber-600" : "text-rose-500"
+                                                  )}>
+                                                       {Math.round(item.best_score || 0)}
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  ))}
+                              </div>
+                          )}
+                      </div>
+                  </motion.div>
+              </div>
+          )}
+      </AnimatePresence>
 
       {!ctxEnrollId && (
-        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 flex items-start gap-3">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800 flex items-start gap-3">
           <Info className="w-5 h-5 mt-0.5" />
           <div>
             <div className="font-semibold mb-1">Thiếu ngữ cảnh học</div>
-            <div>
-              Không tìm thấy <code>enrollment_id</code>. Đã đọc{" "}
-              <code>localStorage.learn</code> (L2) và resolve theo mã học nhưng
-              không thành công.
-            </div>
+            <div>Không tìm thấy <code>enrollment_id</code>. Đã đọc <code>localStorage.learn</code> (L2).</div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

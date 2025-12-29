@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   TextField,
   DialogActions,
   Snackbar,
@@ -18,11 +19,11 @@ import {
   Switch,
   FormControlLabel,
   IconButton,
-  InputAdornment,             // ← SEARCH
+  InputAdornment,         
 } from "@mui/material";
 import RefreshRounded from "@mui/icons-material/RefreshRounded";
-import SearchRounded from "@mui/icons-material/SearchRounded";   // ← SEARCH
-import CloseRounded from "@mui/icons-material/CloseRounded";     // ← SEARCH
+import SearchRounded from "@mui/icons-material/SearchRounded";   
+import CloseRounded from "@mui/icons-material/CloseRounded";    
 
 /**
  * props:
@@ -44,8 +45,9 @@ export default function ResourceTable({
   onViewRow,
   rowIdKey = "id",
   transformPayload,
-  searchParam = "search",                // ← SEARCH
-  searchPlaceholder = "Search...",       // ← SEARCH
+  searchParam = "search",                
+  searchPlaceholder = "Search...",       
+  filters = [],
 }) {
   const [rows, setRows] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -56,6 +58,10 @@ export default function ResourceTable({
   // ===== SEARCH state + debounce =====
   const [search, setSearch] = React.useState("");
   const [debounced, setDebounced] = React.useState("");
+
+  const [filterValues, setFilterValues] = React.useState({});
+
+  const [deleteId, setDeleteId] = React.useState(null);
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 400);
     return () => clearTimeout(t);
@@ -64,19 +70,19 @@ export default function ResourceTable({
   const load = async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = {...filterValues};
       if (debounced) params[searchParam] = debounced;   // ← SEARCH param
 
       let all = [];
       let url = resource;
       let first = true;
 
-      // Loop qua tất cả các trang nếu response dạng DRF pagination
+      // Loop qua tất cả các trang resp dạng DRF pagination
       // { count, next, previous, results: [...] }
       while (true) {
         const res = await api.get(
           url,
-          first ? { params } : {},   // chỉ truyền params cho request đầu
+          first ? { params } : {}, 
           { ttl: 0 }
         );
 
@@ -114,7 +120,14 @@ export default function ResourceTable({
 
   useEffect(() => {
     load();
-  }, [resource, debounced]); // ← reload khi đổi resource hoặc search
+  }, [resource, debounced, filterValues]); 
+
+  const handleFilterChange = (name, value) => {
+    setFilterValues((prev) => ({
+      ...prev,
+      [name]: value === "" ? undefined : value, 
+    }));
+  };
 
   const coerceValue = (val, fieldDef) => {
     if (val === "" || val == null)
@@ -132,19 +145,20 @@ export default function ResourceTable({
   const onSubmit = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+  
     let payload = {};
     form.forEach((f) => {
       if (f.type === "boolean") {
-        payload[f.name] = coerceValue(fd.get(f.name), f);
+        payload[f.name] = !!fd.get(f.name);
       } else {
         payload[f.name] = coerceValue(fd.get(f.name), f);
       }
     });
-
+  
     if (typeof transformPayload === "function") {
       payload = transformPayload(payload, { editing });
     }
-
+  
     try {
       if (editing) {
         await api.put(`${resource}${editing[rowIdKey]}/`, payload);
@@ -166,11 +180,15 @@ export default function ResourceTable({
     }
   };
 
-  const onDelete = async (id) => {
-    const ok = window.confirm("Delete this item?");
-    if (!ok) return;
+  const confirmDelete = (id) => {
+    setDeleteId(id);
+  };
+
+  // 2. Hàm thực hiện xóa khi bấm "Agree" trong Dialog
+  const handleConfirmDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`${resource}${id}/`);
+      await api.delete(`${resource}${deleteId}/`);
       setToast({ msg: "Deleted", type: "success" });
       load();
     } catch (err) {
@@ -180,8 +198,26 @@ export default function ResourceTable({
           : err?.message || "Delete failed",
         type: "error",
       });
+    } finally {
+      setDeleteId(null); // Đóng dialog
     }
   };
+  // const onDelete = async (id) => {
+  //   const ok = window.confirm("Delete this item?");
+  //   if (!ok) return;
+  //   try {
+  //     await api.delete(`${resource}${id}/`);
+  //     setToast({ msg: "Deleted", type: "success" });
+  //     load();
+  //   } catch (err) {
+  //     setToast({
+  //       msg: err?.response?.data
+  //         ? JSON.stringify(err.response.data)
+  //         : err?.message || "Delete failed",
+  //       type: "error",
+  //     });
+  //   }
+  // };
 
   const renderField = (f) => {
     if (f.type === "boolean") {
@@ -323,7 +359,24 @@ export default function ResourceTable({
           </DialogActions>
         </Box>
       </Dialog>
-
+      
+      <Dialog
+        open={!!deleteId}
+        onClose={() => setDeleteId(null)}
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this item? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteId(null)}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Snackbar
         open={!!toast.msg}
         autoHideDuration={3000}

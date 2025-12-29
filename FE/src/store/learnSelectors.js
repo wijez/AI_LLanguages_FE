@@ -22,3 +22,6 @@ export const makeSelectTopicByIndex = () =>
     [selectTopics, (_, idx) => idx],
     (items, idx) => items[idx] || null
   );
+
+export const selectCurrentSession = createSelector(selectLearn, (l) => l.currentSession);
+export const selectSessionStatus = createSelector(selectLearn, (l) => l.sessionStatus);

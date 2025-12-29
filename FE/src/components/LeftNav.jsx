@@ -57,7 +57,7 @@ export default function LeftNav() {
 
   return (
     <div 
-      className="w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto sticky top-0"
+      className="w-full bg-white border-r border-gray-200 p-4 h-screen overflow-y-auto sticky top-0 "
       style={{ scrollbarGutter: 'stable', scrollbarWidth: 'thin' }} 
     >
       {/* Logo Section */}

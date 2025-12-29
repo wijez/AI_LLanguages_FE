@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import StatsBar from "./Bars/StatsBar";
 import Links from "./Footers/Links";
-import { NotificationsPanel, DailyXPPanel, CalendarPanel} from "../lazy"
+import { NotificationsPanel, CalendarPanel} from "../lazy"
 
 function RightNav() {
   const { t } = useTranslation(); 
@@ -19,7 +19,6 @@ function RightNav() {
       <StatsBar languageCode={learn} className="mb-2" />
       <NotificationsPanel />
       <CalendarPanel />
-      <DailyXPPanel />
       <Links />
     </div>
   );

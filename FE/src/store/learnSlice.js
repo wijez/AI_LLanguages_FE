@@ -27,17 +27,14 @@ const setCachedTopics = (abbr, items) => {
 
 // ----------------- Helpers -----------------
 async function pickAbbrOrThrow(currentAbbr) {
-  // Ưu tiên: giá trị hiện có → localStorage('learn') → Enrollments.me()
   let abbr = (currentAbbr || '').toLowerCase() || readAbbr();
   if (abbr) return abbr;
 
-  // Chưa có → lấy từ enrollment đầu tiên
   const me = await api.Enrollments.me();
   const arr = Array.isArray(me) ? me : (me?.results || []);
   const first = arr[0];
   abbr = (first?.language?.abbreviation || first?.language?.code || '').toLowerCase();
   if (!abbr) {
-    // Không có enrollment nào
     const err = new Error('NO_LANGUAGE');
     err.code = 'no_language';
     throw err;
@@ -58,14 +55,6 @@ export const hydrateLearn = createAsyncThunk('learn/hydrate', async () => {
   return { abbr, cached: cached || [] };
 });
 
-/**
- * fetchTopicsSafe:
- * - Lấy abbr theo ưu tiên: arg.abbr → state.learn.abbr → localStorage → Enrollments.me()
- * - Gọi /topics/by-language?language_abbr=<abbr>
- * - Offline fallback: nếu mạng lỗi và có cache → fulfill (offline)
- * - 401 → rejectWithValue({ code:'unauthenticated', message:'...' })
- * - 403 → rejectWithValue({ code:'not_enrolled', message:'...' })
- */
 export const fetchTopicsSafe = createAsyncThunk(
   'learn/fetchTopicsSafe',
   async (arg, thunkAPI) => {
@@ -74,56 +63,39 @@ export const fetchTopicsSafe = createAsyncThunk(
 
     try {
       abbr = await pickAbbrOrThrow(abbr);
-
       const res = await api.Topics.byLanguage({ language_abbr: abbr, page_size: 200 });
       const items = toItems(res);
-
       setCachedTopics(abbr, items);
       return { abbr, items, fromCache: false, offline: false };
     } catch (err) {
       const response = err?.response;
       const status = response?.status;
-      const isNetworkError = !response; // axios: không có response => offline/server down
+      const isNetworkError = !response;
       const cached = abbr ? getCachedTopics(abbr) : null;
 
-      // Phân loại lỗi rõ ràng cho UI
-      if (status === 401) {
-        return thunkAPI.rejectWithValue({ code: 'unauthenticated', message: 'Bạn chưa đăng nhập.' });
-      }
-      if (status === 403) {
-        return thunkAPI.rejectWithValue({ code: 'not_enrolled', message: 'Bạn chưa đăng ký ngôn ngữ này.' });
-      }
+      if (status === 401) return thunkAPI.rejectWithValue({ code: 'unauthenticated', message: 'Bạn chưa đăng nhập.' });
+      if (status === 403) return thunkAPI.rejectWithValue({ code: 'not_enrolled', message: 'Bạn chưa đăng ký ngôn ngữ này.' });
 
       if (isNetworkError && cached && cached.length) {
-        // Fulfill thay vì reject để UI hoạt động bình thường ở chế độ offline
-        return thunkAPI.fulfillWithValue({
-          abbr,
-          items: cached,
-          fromCache: true,
-          offline: true,
-          error: 'network',
-        });
+        return thunkAPI.fulfillWithValue({ abbr, items: cached, fromCache: true, offline: true, error: 'network' });
       }
 
-      // Không có cache hoặc lỗi khác
-      const msg =
-        isNetworkError ? 'offline' : (err?.message || response?.data?.detail || 'Failed to load topics');
+      const msg = isNetworkError ? 'offline' : (err?.message || response?.data?.detail || 'Failed to load topics');
       return thunkAPI.rejectWithValue({ code: isNetworkError ? 'offline' : 'error', message: msg });
     }
   }
 );
 
+//Start Session - Lưu vào currentSession
 export const startLessonSession = createAsyncThunk(
   'learn/startLessonSession',
   async ({ lessonId }, thunkAPI) => {
     try {
       const state = thunkAPI.getState();
       const abbr = state.learn.abbr || readAbbr();
-
       const me = await api.Enrollments.me();
       const items = Array.isArray(me) ? me : (me?.results || []);
-      const en =
-        items.find((x) =>
+      const en = items.find((x) =>
           (x?.language?.abbreviation || x?.language?.code || '').toLowerCase() === (abbr || '').toLowerCase()
         ) || items[0];
       if (!en) throw new Error('No enrollment');
@@ -136,15 +108,32 @@ export const startLessonSession = createAsyncThunk(
   }
 );
 
+export const resumeLessonSession = createAsyncThunk(
+  "learn/resumeLessonSession",
+  async ({ sessionId }, { rejectWithValue }) => {
+    try {
+      // Gọi API resume (đã update ở Backend để trả về resume_context)
+      const response = await api.LearningSessions.resume(sessionId);
+      return response;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.detail || err.message || "Resume failed");
+    }
+  }
+);
+
 // ----------------- Slice -----------------
 const initialState = {
   abbr: '',
-  topicsByAbbr: {}, // abbr -> { items: [], lastSync: number|null, fromCache: boolean }
-  status: 'idle',   // idle | loading | refreshing | ready | offline
-  error: null,      // string (message)
-  errorCode: null,  // 'unauthenticated' | 'not_enrolled' | 'offline' | 'error' | null
+  topicsByAbbr: {}, 
+  status: 'idle',   
+  error: null,      
+  errorCode: null,  
   offline: false,
   lastSync: null,
+  
+  // Session State
+  currentSession: null, 
+  sessionStatus: 'idle', // idle | loading | active | error
 };
 
 const learn = createSlice({
@@ -156,11 +145,15 @@ const learn = createSlice({
       state.abbr = v;
       if (v) writeAbbr(v);
     },
-    // optional: clear lỗi thủ công nếu cần
     clearLearnError(state) {
       state.error = null;
       state.errorCode = null;
     },
+    // Reset session khi thoát bài học
+    clearCurrentSession(state) {
+        state.currentSession = null;
+        state.sessionStatus = 'idle';
+    }
   },
   extraReducers: (b) => {
     b.addCase(hydrateLearn.fulfilled, (s, a) => {
@@ -174,7 +167,6 @@ const learn = createSlice({
     b.addCase(fetchTopicsSafe.pending, (s) => {
       s.status = s.status === 'ready' ? 'refreshing' : 'loading';
       s.error = null;
-      s.errorCode = null;
     });
 
     b.addCase(fetchTopicsSafe.fulfilled, (s, a) => {
@@ -184,27 +176,48 @@ const learn = createSlice({
       s.status = offline ? 'offline' : 'ready';
       s.offline = !!offline;
       s.error = null;
-      s.errorCode = null;
       s.lastSync = Date.now();
     });
 
     b.addCase(fetchTopicsSafe.rejected, (s, a) => {
       const code = a.payload?.code || a.error?.code || null;
       const message = a.payload?.message || a.error?.message || 'Offline';
-
       if (code === 'offline') {
         s.status = 'offline';
         s.offline = true;
       } else {
-        // với 401/403 hoặc lỗi khác: coi như không offline
-        s.status = s.status === 'loading' ? 'idle' : s.status; // giữ nguyên nếu đang ready
+        s.status = s.status === 'loading' ? 'idle' : s.status;
         s.offline = false;
       }
       s.error = message;
       s.errorCode = code;
     });
+
+    b.addCase(startLessonSession.pending, (s) => {
+        s.sessionStatus = 'loading';
+    });
+    b.addCase(startLessonSession.fulfilled, (s, a) => {
+        s.sessionStatus = 'active';
+        s.currentSession = a.payload;
+    });
+    b.addCase(startLessonSession.rejected, (s, a) => {
+        s.sessionStatus = 'error';
+        s.error = a.payload || "Start session failed";
+    });
+
+    b.addCase(resumeLessonSession.pending, (s) => {
+        s.sessionStatus = 'loading';
+    });
+    b.addCase(resumeLessonSession.fulfilled, (s, a) => {
+        s.sessionStatus = 'active';
+        s.currentSession = a.payload;
+    });
+    b.addCase(resumeLessonSession.rejected, (s, a) => {
+        s.sessionStatus = 'error';
+        s.error = a.payload || "Resume session failed";
+    });
   }
 });
 
-export const { setAbbr, clearLearnError } = learn.actions;
+export const { setAbbr, clearLearnError, clearCurrentSession } = learn.actions;
 export default learn.reducer;

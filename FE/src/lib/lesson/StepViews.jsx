@@ -1,5 +1,5 @@
+import React from "react";
 
-// ====== TTS helpers ======
 export const LANG_BCP = (code) => {
   const m = { en: "en-US", vi: "vi-VN", ja: "ja-JP", ko: "ko-KR", zh: "zh-CN" };
   return m[(code || "en").toLowerCase()] || "en-US";
@@ -11,12 +11,11 @@ export function speakText(text, langHint = "en-US") {
     u.lang = langHint;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
-  } catch (e){
-    console.warn("[speakText] failed:", e);
+  } catch (e) {
+    console.error(e);
   }
 }
 
-// ====== small inputs (nhận state từ ngoài) ======
 export const Input = ({ value, onChange, placeholder = "", label = "Câu trả lời của bạn" }) => (
   <div className="mx-auto mt-6 max-w-xl">
     <label className="block text-sm text-slate-500 mb-2">{label}</label>
@@ -42,7 +41,6 @@ export const Textarea = ({ value, onChange, placeholder = "", label = "Viết c�
   </div>
 );
 
-// ====== QUIZ (choices: {id, text}) ======
 export function renderQuiz(question, choices, pickedId, setPickedId) {
   return (
     <div className="space-y-4">
@@ -73,7 +71,6 @@ export function renderQuiz(question, choices, pickedId, setPickedId) {
   );
 }
 
-// ====== MATCHING (left L1, right blocks en) ======
 export function renderMatching(leftText, rightChoices, pickedRight, setPickedRight) {
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -105,7 +102,6 @@ export function renderMatching(leftText, rightChoices, pickedRight, setPickedRig
   );
 }
 
-// ====== LISTENING ======
 export function renderListening(q, typed, setTyped, langHint) {
   return (
     <div className="space-y-4">
@@ -128,7 +124,6 @@ export function renderListening(q, typed, setTyped, langHint) {
   );
 }
 
-// ====== READING (assemble answer from tokens) ======
 function makeReadingHint(answer = "", level = 1) {
   const a = String(answer).trim();
   if (!a) return "";
@@ -144,6 +139,14 @@ function makeReadingHint(answer = "", level = 1) {
 }
 
 export function renderReadingAssemble(q, readingPassage, ordered, setOrdered, hintLevel, setHintLevel, langHint) {
+  const handleAddToTray = (token) => {
+    setOrdered([...ordered, token]);
+  };
+
+  const handleRemoveFromTray = (token, indexToRemove) => {
+    setOrdered(ordered.filter((_, i) => i !== indexToRemove));
+  };
+
   return (
     <div className="space-y-6">
       {!!readingPassage && (
@@ -179,91 +182,132 @@ export function renderReadingAssemble(q, readingPassage, ordered, setOrdered, hi
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 justify-center">
-        {(q.tokens || []).map((t, i) => {
-          const used = ordered.includes(t);
-          return (
+      <div className="w-full flex flex-col h-full">
+        <div className="min-h-[80px] flex flex-wrap gap-2 content-start py-4 border-b-2 border-slate-100 mb-8 px-2">
+          {ordered.map((t, i) => (
             <button
-              key={`${t}_${i}`}
-              onClick={() => setOrdered((arr) => (used ? arr : [...arr, t]))}
-              className={[
-                "rounded-xl border px-3 py-2",
-                used ? "bg-slate-200 border-slate-300 cursor-not-allowed" : "border-slate-300 hover:bg-slate-50",
-              ].join(" ")}
-              disabled={used}
-              title={used ? "Đã dùng token này" : "Thêm token"}
+              key={`tray-${i}`}
+              onClick={() => handleRemoveFromTray(t, i)}
+              className="bg-white border-2 border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-lg font-medium shadow-sm hover:bg-slate-50 active:translate-y-1 transition-all"
             >
               {t}
             </button>
-          );
-        })}
-      </div>
-
-      {ordered.length > 0 && (
-        <div className="mx-auto max-w-xl rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center">
-          <div className="text-sm text-slate-600">Câu của bạn:</div>
-          <div className="mt-1 font-semibold break-words">{ordered.join(" ")}</div>
-          <div className="mt-2 flex items-center justify-center gap-2">
-            <button onClick={() => setOrdered([])} className="text-xs text-emerald-700 underline">Làm lại</button>
-            <button onClick={() => setOrdered((arr) => arr.slice(0, -1))} className="text-xs text-emerald-700 underline">Xoá từ cuối</button>
-          </div>
+          ))}
         </div>
-      )}
+
+        <div className="flex flex-wrap gap-2 justify-center">
+          {(q.tokens || []).map((t, i) => {
+            const usedCount = ordered.filter(tk => tk === t).length;
+            const totalCount = q.tokens.filter(tk => tk === t).length;
+            const isUsed = usedCount >= totalCount; 
+            
+            return (
+              <div key={`bank-${i}`} className="relative">
+                {!isUsed && (
+                  <button
+                    onClick={() => handleAddToTray(t)}
+                    className="relative z-10 bg-white border-2 border-slate-200 border-b-4 text-slate-700 px-4 py-2 rounded-xl text-lg font-medium active:border-b-2 active:translate-y-[2px] transition-all hover:bg-slate-50"
+                  >
+                    {t}
+                  </button>
+                )}
+                <div
+                  className={`bg-slate-200 rounded-xl px-4 py-2 text-lg font-medium text-transparent border-2 border-slate-200 select-none ${!isUsed ? 'absolute inset-0 -z-0' : ''}`}
+                >
+                  {t}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ====== ORDERING ======
 export function renderOrdering(q, ordered, setOrdered) {
+  const handleAddToTray = (token) => {
+    setOrdered([...ordered, token]);
+  };
+
+  const handleRemoveFromTray = (token, indexToRemove) => {
+    setOrdered(ordered.filter((_, i) => i !== indexToRemove));
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="text-2xl font-bold text-slate-800 text-center">{q.question}</div>
+    <div className="w-full flex flex-col h-full">
+      <div className="min-h-[120px] flex flex-wrap gap-2 content-start py-4 border-b-2 border-slate-100 mb-8 px-2">
+        {ordered.map((t, i) => (
+          <button
+            key={`tray-${i}`}
+            onClick={() => handleRemoveFromTray(t, i)}
+            className="bg-white border-2 border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-lg font-medium shadow-sm hover:bg-slate-50 active:translate-y-1 transition-all"
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-wrap gap-2 justify-center">
         {(q.tokens || []).map((t, i) => {
-          const used = ordered.includes(t);
+          const usedCount = ordered.filter(tk => tk === t).length;
+          const totalCount = q.tokens.filter(tk => tk === t).length;
+          
+          let instanceIndex = 0;
+          for(let k=0; k<i; k++) {
+              if (q.tokens[k] === t) instanceIndex++;
+          }
+          const isUsed = instanceIndex < usedCount;
+
           return (
-            <button
-              key={`${t}_${i}`}
-              onClick={() => setOrdered((arr) => (used ? arr.filter((x) => x !== t) : [...arr, t]))}
-              className={[
-                "rounded-xl border px-3 py-2",
-                used ? "bg-slate-200 border-slate-300" : "border-slate-300 hover:bg-slate-50",
-              ].join(" ")}
-            >
-              {t}
-            </button>
+            <div key={`bank-${i}`} className="relative">
+              {!isUsed && (
+                <button
+                  onClick={() => handleAddToTray(t)}
+                  className="relative z-10 bg-white border-2 border-slate-200 border-b-4 text-slate-700 px-4 py-2 rounded-xl text-lg font-medium active:border-b-2 active:translate-y-[2px] transition-all hover:bg-slate-50"
+                >
+                  {t}
+                </button>
+              )}
+              <div
+                className={`bg-slate-200 rounded-xl px-4 py-2 text-lg font-medium text-transparent border-2 border-slate-200 select-none ${!isUsed ? 'absolute inset-0 -z-0' : ''}`}
+              >
+                {t}
+              </div>
+            </div>
           );
         })}
       </div>
-      {ordered.length > 0 && (
-        <div className="mx-auto max-w-xl rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-center">
-          <div className="text-sm text-slate-600">Câu của bạn:</div>
-          <div className="mt-1 font-semibold">{ordered.join(" ")}</div>
-          <button onClick={() => setOrdered([])} className="mt-2 text-xs text-emerald-700 underline">Làm lại</button>
-        </div>
-      )}
     </div>
   );
 }
 
-// ====== PRON / SPEAKING ======
 export function renderPron(q, typed, setTyped, isRecording, isProcessing, startRecord, stopRecord, langHint) {
   return (
     <div className="space-y-4 text-center">
       <div className="text-2xl font-bold text-slate-800">{q.question}</div>
       <div className="flex items-center justify-center gap-2">
-        <button onClick={() => speakText(q.ttsSample || q.answer, langHint)} className="rounded-lg border px-3 py-2 hover:bg-slate-50">
+        <button
+          onClick={() => speakText(q.ttsSample || q.answer, langHint)}
+          className="rounded-lg border px-3 py-2 hover:bg-slate-50"
+        >
           ▶ Nghe mẫu
         </button>
 
         {!isRecording ? (
-          <button onClick={()=>{  
-            console.log("[UI] startRecord clicked"); startRecord()
-          }} className="rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700">🎙️ Ghi</button>
+          <button
+            onClick={startRecord}
+            className="rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700"
+          >
+            🎙️ Ghi
+          </button>
         ) : (
-          <button onClick={() => { 
-            console.log("[UI] startRecord clicked"); stopRecord()
-          }} className="rounded-lg bg-rose-600 text-white px-3 py-2 hover:bg-rose-700">⏹ Dừng</button>
+          <button
+            onClick={stopRecord}
+            className="rounded-lg bg-rose-600 text-white px-3 py-2 hover:bg-rose-700"
+          >
+            ⏹ Dừng
+          </button>
         )}
       </div>
 
@@ -286,14 +330,27 @@ export function renderSpeaking(q, typed, setTyped, isRecording, isProcessing, st
     <div className="space-y-4 text-center">
       <div className="text-2xl font-bold text-slate-800">{q.question}</div>
       <div className="flex items-center justify-center gap-2">
-        <button onClick={() => speakText(q.ttsSample || q.answer, langHint)} className="rounded-lg border px-3 py-2 hover:bg-slate-50">
+        <button
+          onClick={() => speakText(q.ttsSample || q.answer, langHint)}
+          className="rounded-lg border px-3 py-2 hover:bg-slate-50"
+        >
           ▶ Nghe mẫu
         </button>
 
         {!isRecording ? (
-          <button onClick={startRecord} className="rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700">🎙️ Ghi</button>
+          <button
+            onClick={startRecord}
+            className="rounded-lg bg-emerald-600 text-white px-3 py-2 hover:bg-emerald-700"
+          >
+            🎙️ Ghi
+          </button>
         ) : (
-          <button onClick={stopRecord} className="rounded-lg bg-rose-600 text-white px-3 py-2 hover:bg-rose-700">⏹ Dừng</button>
+          <button
+            onClick={stopRecord}
+            className="rounded-lg bg-rose-600 text-white px-3 py-2 hover:bg-rose-700"
+          >
+            ⏹ Dừng
+          </button>
         )}
       </div>
 

@@ -3,6 +3,6 @@ import SignupPage from '../../user/pages/SignUpPage'
 
 export default function More() {
   return (
-    <SignupPage />
+    <SignupPage/>
   )
 }

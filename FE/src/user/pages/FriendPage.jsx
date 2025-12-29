@@ -3,7 +3,7 @@ import { MainLayout , Friend} from '../../lazy'
 
 export default function FriendPage() {
   return (
-    <MainLayout containerClassName="w-full px-0 py-0 flex justify-center" >
+    <MainLayout >
       <Friend/>
     </MainLayout>
   )

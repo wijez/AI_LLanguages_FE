@@ -6,6 +6,7 @@ export const MessageBubble = ({
   side,
   role,
   text,
+  translation,
   highlight = false,
   meta,
   audioKey,
@@ -114,6 +115,11 @@ export const MessageBubble = ({
             )}
           >
             {text}
+            {translation && (
+              <p className="mt-1 text-sm text-slate-500 italic border-t border-slate-200 pt-1">
+                {translation}
+              </p>
+            )}
           </div>
 
           {/* Progress Bar Layer */}

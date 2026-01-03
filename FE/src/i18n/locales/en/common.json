@@ -60,5 +60,16 @@
     "jobs": "Jobs",
     "investors": "Investors",
     "terms": "Terms"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No new notifications",
+    "load_more": "Load more",
+    "type": "Type",
+    "created": "Created"
+  },
+  "calendar": {
+    "title": "Activity Calendar",
+    "empty": "No upcoming events"
   }
 }

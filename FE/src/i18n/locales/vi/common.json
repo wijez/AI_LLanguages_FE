@@ -59,5 +59,16 @@
     "jobs": "Công việc",
     "investors": "Nhà đầu tư",
     "terms": "Điều khoản"
+  },
+  "notifications": {
+    "title": "Thông báo",
+    "empty": "Không có thông báo mới",
+    "load_more": "Xem thêm",
+    "type": "Loại",
+    "created": "Ngày tạo"
+  },
+  "calendar": {
+    "title": "Lịch hoạt động",
+    "empty": "Không có sự kiện sắp tới"
   }
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { api } from '../../api/api';
 
 export default function TitleCard({
@@ -11,18 +12,21 @@ export default function TitleCard({
   title = '',
   onBack,
   onHelp,
-  helpText = 'HƯỚNG DẪN',
+  helpText, 
   floating = false,
   offset = 'top-2 md:top-3',
   center = true,
   cta,
   className
 }) {
+  const { t } = useTranslation(['learn', 'common']);
   const [data, setData] = React.useState(topic || null);
   const [loading, setLoading] = React.useState(!!(!topic && (topicId || slug)));
   const [error, setError] = React.useState('');
 
-  // đồng bộ khi prop topic thay đổi
+  // Lấy text hiển thị: Priority: Prop truyền vào -> i18n -> Default
+  const displayHelpText = helpText || t('learn:guide', { defaultValue: 'HƯỚNG DẪN' }); 
+
   React.useEffect(() => {
     if (topic) {
       setData(topic);
@@ -31,34 +35,37 @@ export default function TitleCard({
     }
   }, [topic]);
 
-  // nếu không có topic, mới cần fetch theo id/slug
   React.useEffect(() => {
     if (topic || (!topicId && !slug)) return;
     let cancelled = false;
     (async () => {
       setLoading(true); setError('');
       try {
-        let t = null;
+        let tData = null;
         if (topicId) {
-          t = await api.Topics.get(topicId);
+          tData = await api.Topics.get(topicId);
         } else if (slug) {
           const res = await api.Topics.list({ slug });
           const items = Array.isArray(res?.results) ? res.results : (Array.isArray(res) ? res : []);
-          t = items[0] || null;
+          tData = items[0] || null;
         }
-        if (!cancelled) setData(t);
+        if (!cancelled) setData(tData);
       } catch (e) {
-        if (!cancelled) setError(e?.message || 'Failed to load topic');
+        if (!cancelled) setError(e?.message || t('learn:error_topic', { defaultValue: 'Lỗi tải chủ đề' })); 
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [topic, topicId, slug]);
+  }, [topic, topicId, slug, t]);
 
   const computedTitle = data?.title ?? title;
+  
+  // Xử lý hiển thị Section (Ví dụ: "CHỦ ĐỀ, CỬA 1")
   const computedSection = data
-    ? (sectionPrefix ? `${sectionPrefix}, CỬA ${data?.order ?? '?'}` : `CỬA ${data?.order ?? '?'}`)
+    ? (sectionPrefix 
+        ? `${sectionPrefix}, ${t('learn:door', { defaultValue: 'CỬA' })} ${data?.order ?? '?'}` 
+        : `${t('learn:door', { defaultValue: 'CỬA' })} ${data?.order ?? '?'}`)
     : section;
 
   return (
@@ -82,10 +89,10 @@ export default function TitleCard({
             </button>
 
             <h1 className="mt-2 text-xl md:text-2xl lg:text-2xl font-extrabold leading-snug">
-              {loading && !computedTitle ? 'Đang tải...' : (computedTitle || '—')}
+              {loading && !computedTitle ? t('common:loading', { defaultValue: 'Đang tải...' }) : (computedTitle || '—')}
             </h1>
 
-            {error && <div className="mt-1 text-xs font-medium text-rose-100/90">Lỗi tải topic: {error}</div>}
+            {error && <div className="mt-1 text-xs font-medium text-rose-100/90">{t('learn:error_topic', { defaultValue: 'Lỗi tải chủ đề' })}: {error}</div>}
           </div>
 
           <button
@@ -105,7 +112,7 @@ export default function TitleCard({
                 <circle cx="18" cy="17" r="2" fill="currentColor" />
               </svg>
             </span>
-            <span className="font-extrabold tracking-wide">{helpText}</span>
+            <span className="font-extrabold tracking-wide">{displayHelpText}</span>
             <span className="pointer-events-none absolute inset-0 rounded-2xl ring-2 ring-sky-800/30" />
           </button>
         </div>

@@ -367,3 +367,30 @@ export function renderSpeaking(q, typed, setTyped, isRecording, isProcessing, st
     </div>
   );
 }
+
+export function renderFillgap(q, typed, setTyped) {
+  return (
+    <div className="space-y-4 text-center">
+      <div className="text-2xl font-bold text-slate-800">{q.question}</div>
+      <Input 
+        value={typed} 
+        onChange={setTyped} 
+        label="Điền từ đúng vào chỗ trống" 
+        placeholder="..."
+      />
+    </div>
+  );
+}
+
+export function renderWriting(q, typed, setTyped) {
+  return (
+    <div className="space-y-4 text-center">
+      <div className="text-2xl font-bold text-slate-800">{q.question}</div>
+      <Textarea 
+        value={typed} 
+        onChange={setTyped} 
+        label="Câu trả lời của bạn" 
+      />
+    </div>
+  );
+}

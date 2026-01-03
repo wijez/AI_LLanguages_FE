@@ -63,5 +63,16 @@
     "jobs": "採用情報",
     "investors": "投資家向け",
     "terms": "利用規約"
+  },
+  "notifications": {
+    "title": "通知",
+    "empty": "新しい通知はありません",
+    "load_more": "もっと見る",
+    "type": "タイプ",
+    "created": "作成日"
+  },
+  "calendar": {
+    "title": "アクティビティカレンダー",
+    "empty": "予定されているイベントはありません"
   }
 }

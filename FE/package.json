@@ -19,6 +19,7 @@
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/vite": "^4.1.14",
     "axios": "^1.12.2",
+    "canvas-confetti": "^1.9.4",
     "flag-icons": "^7.5.0",
     "framer-motion": "^12.23.26",
     "i18next": "^25.6.0",

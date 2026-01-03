@@ -340,6 +340,7 @@ export default function RoleplayChatDemo({
                 id: `ai-${Date.now()}`, 
                 role: "assistant", 
                 text: res.ai_text,
+                translation: res.ai_trans,
                 audio_key: res.ai_audio, 
                 side: "left", 
                 waitAfter: 1500 
@@ -446,7 +447,7 @@ export default function RoleplayChatDemo({
     if (m.type === "pron") return <PronCard key={m.id} pron={m.pron} />;
     if (m.type === "context") return <ContextCard key={m.id} items={m.context} />;
     if (m.type === "feedback") return <FeedbackBubble key={m.id} {...m.data} />;
-    return <MessageBubble key={m.id} side={m.side} role={m.role} text={m.text} meta={m.meta} audioKey={m.audio_key} timelineActive={isActive} timelineProgress={isActive ? progress : 0} isWaiting={isActive ? isWaiting : false} onSkip={isActive ? skipCurrent : undefined} />;
+    return <MessageBubble key={m.id} side={m.side} role={m.role} text={m.text}  translation={m.translation} meta={m.meta} audioKey={m.audio_key} timelineActive={isActive} timelineProgress={isActive ? progress : 0} isWaiting={isActive ? isWaiting : false} onSkip={isActive ? skipCurrent : undefined} />;
   };
 
   const displayMessages = [...historyMessages];

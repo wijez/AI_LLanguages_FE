@@ -32,6 +32,7 @@ const AI_Resources = {
   Recommendations: {
     ...createCrud("/recommendations/"),
     generate: (payload, cfg) => aiClient.post("/generate-recs/", payload, cfg),
+    latest: (cfg) => aiClient.get('/recommendations/latest/', cfg)
   },
 
   Feedbacks: createCrud("/feedbacks/"),

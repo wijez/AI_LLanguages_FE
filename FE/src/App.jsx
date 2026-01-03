@@ -107,6 +107,7 @@ function App() {
               <Route path="/profile" element={<InfoPage />} />
               <Route path="/more" element={<MorePage />} />
               <Route path="find-friends" element={<FriendPage/>} />
+              <Route path="/learn/session/:sessionId" element={<LessonSession />} />
             </Route>
 
             <Route element={<RouteGuard mode="admin" />}>

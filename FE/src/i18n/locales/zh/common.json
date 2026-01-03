@@ -62,5 +62,16 @@
     "jobs": "工作",
     "investors": "投资者",
     "terms": "条款"
+  },
+  "notifications": {
+    "title": "通知",
+    "empty": "没有新通知",
+    "load_more": "加载更多",
+    "type": "类型",
+    "created": "创建于"
+  },
+  "calendar": {
+    "title": "活动日历",
+    "empty": "没有即将到来的活动"
   }
 }

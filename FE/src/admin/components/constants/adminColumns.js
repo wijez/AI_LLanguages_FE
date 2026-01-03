@@ -64,4 +64,62 @@ export const adminColumns = {
         renderCell: (params) => params.value ? new Date(params.value).toLocaleString() : ""
       },
     ],
+    trainingRuns: [
+      { field: "id", headerName: "ID", width: 70 },
+      { 
+        field: "model", 
+        headerName: "Model ID", 
+        width: 100 
+      }, // Vì BE chỉ trả về ID của Foreign Key
+      { field: "status", headerName: "Status", width: 120 },
+      { 
+        field: "dataset_snapshot", 
+        headerName: "Snapshot", 
+        width: 150 
+      },
+      { 
+        field: "val_auc", 
+        headerName: "AUC Score", 
+        width: 120,
+        // TRÍCH XUẤT TỪ JSON: params.row.metrics là object {val_auc: ...}
+        valueGetter: (params) => {
+          const metrics = params.row.metrics;
+          if (typeof metrics === 'string') {
+              try {
+                  const parsed = JSON.parse(metrics);
+                  return parsed.val_auc ? (parsed.val_auc * 100).toFixed(2) + '%' : "N/A";
+              } catch (e) { return "Error"; }
+          }
+          return metrics?.val_auc ? (metrics.val_auc * 100).toFixed(2) + '%' : "N/A";
+        }
+      },
+      { 
+        field: "started_at", 
+        headerName: "Started", 
+        width: 180,
+        renderCell: (params) => params.value ? new Date(params.value).toLocaleString() : ""
+      }
+    ],
+
+    recommendations: [
+      { field: "id", headerName: "ID", width: 70 },
+      { field: "user_id", headerName: "User ID", width: 90 },
+      { field: "rec_type", headerName: "Type", width: 100 },
+      { 
+        field: "priority_score", 
+        headerName: "Score", 
+        width: 100,
+        valueFormatter: (params) => params.value?.toFixed(4) 
+      },
+      { 
+        field: "reasons", 
+        headerName: "Reasons", 
+        width: 300,
+        valueGetter: (params) => {
+          const val = params.value;
+          return Array.isArray(val) ? val.join(", ") : val;
+        }
+      },
+      { field: "accepted", headerName: "Accepted", type: "boolean", width: 100 },
+    ]
   };

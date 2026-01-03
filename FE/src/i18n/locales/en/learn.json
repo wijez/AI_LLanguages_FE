@@ -1,0 +1,10 @@
+{
+    "topic_prefix": "TOPIC",
+    "view_lessons": "View Lessons",
+    "collapse": "Collapse",
+    "loading_recommendation": "Finding recommendations...",
+    "start_learning": "Start Learning",
+    "guide": "GUIDE",
+    "error_topic": "Error loading topic",
+    "door": "door"
+  }

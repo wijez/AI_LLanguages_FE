@@ -6,9 +6,8 @@ const AI_BASE_URL = (() => {
   if (env) return env;
   // Fallback to origin if proxy is set up
   if (typeof window !== "undefined") {
-    return `${window.location.origin.replace(/\/$/, "")}/api`; 
+    return `${window.location.origin.replace(/\/$/, "")}/api/ai`; 
   }
-  throw new Error("VITE_API_AI_URL is not set");
 })();
 
 // IMPORTANT: Refresh Token url must point to Main Backend, not AI Backend
@@ -32,23 +31,30 @@ const AI_Resources = {
   Recommendations: {
     ...createCrud("/recommendations/"),
     generate: (payload, cfg) => aiClient.post("/generate-recs/", payload, cfg),
+    latest: (cfg) => aiClient.get('/recommendations/latest/', cfg)
   },
 
   Feedbacks: createCrud("/feedbacks/"),
-  AIModels: createCrud("/ai-models/"),
-  TrainingRuns: createCrud("/training-runs/"),
+  AIModels: {
+    ...createCrud("/ai-models/"),
+    getLatest: (cfg) => aiClient.get("/ai-models/", { params: { limit: 1 } }, cfg).then(res => res[0])
+  },
+  TrainingRuns: {
+    ...createCrud("/training-runs/"),
+    getRecent: (limit = 10, cfg) => aiClient.get("/training-runs/", { params: { limit } }, cfg)
+  },
   FeatureSnapshots: createCrud("/feature-snapshots/"),
-
+  
   // Standalone AI Functions
-  predict: (payload, cfg) => aiClient.post("/predict", payload, cfg),
-  train: (payload, cfg) => aiClient.post("/train", payload, cfg),
-  ingestSnapshot: (payload, cfg) => aiClient.post("/ingest/snapshot", payload, cfg),
+  predict: (payload, cfg) => aiClient.post("/predict/", payload, cfg),
+  train: (payload, cfg) => aiClient.post("/train/", payload, cfg),
+  ingestSnapshot: (payload, cfg) => aiClient.post("/ingest/snapshot/", payload, cfg),
 };
 
 // --- EXPORT ---
 export const aiApi = {
   ...aiClient,
-  baseURL: MAIN_BE_URL,
+  // baseURL: MAIN_BE_URL,
   ...AI_Resources,
 };
 

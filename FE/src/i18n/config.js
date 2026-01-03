@@ -19,33 +19,44 @@ import signupEN from './locales/en/signup.json';
 import signupVI from './locales/vi/signup.json';
 import signupZH from './locales/zh/signup.json';
 import signupJA from './locales/ja/signup.json';
-import signupKO from './locales/ko/signup.json';        
+import signupKO from './locales/ko/signup.json';   
+
+import learnEN from './locales/en/learn.json';
+import learnVI from './locales/vi/learn.json';
+import learnZH from './locales/zh/learn.json';
+import learnJA from './locales/ja/learn.json';
+import learnKO from './locales/ko/learn.json';
 
 const resources = {
   en: {
     common: commonEN,
     landing: landingEN,
-    signup: signupEN
+    signup: signupEN,
+    learn: learnEN
   },
   vi: {
     common: commonVI,
     landing: landingVI,
-    signup: signupVI
+    signup: signupVI,
+    learn: learnVI
   },
    zh: {
     common: commonZH,
     landing: landingZH,
-    signup: signupZH
+    signup: signupZH,
+    learn: learnZH
   },
   ja: {
     common: commonJA,
     landing: landingJA,
-    signup: signupJA
+    signup: signupJA, 
+    learn: learnJA
   },
   ko: {
     common: commonKO,
     landing: landingKO,
-    signup: signupKO
+    signup: signupKO,
+    learn: learnKO
   }
  
 };
@@ -60,7 +71,7 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'common',
-    ns: ['common', 'landing'],
+    ns: ['common', 'landing', 'learn', 'signup'],
     
     detection: {
       order: ['localStorage', 'navigator'],

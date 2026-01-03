@@ -154,4 +154,17 @@ export const resourceConfigs = {
       { name: "golden", label: "Golden", type: "boolean" },
     ],
   },
+  recommendations: {
+    title: "AI Recommendations",
+    resource: "/recommendations/",
+    // Recommendations được tạo bởi pipeline, không cho tạo thủ công
+  },
+  aiModels: {
+    title: "AI Model Versions",
+    resource: "/ai-models/",
+  },
+  trainingRuns: {
+    title: "Training History",
+    resource: "/training-runs/",
+  }
 };

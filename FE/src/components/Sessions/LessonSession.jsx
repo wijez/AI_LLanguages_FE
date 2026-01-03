@@ -475,7 +475,7 @@ export default function LessonSession() {
   };
 
   const handlePause = () => {
-    navigate("/practice");
+    navigate("/learn");
   };
 
   useEffect(() => {

@@ -13,6 +13,7 @@ import SkillDetail from "./pages/SkillDetail";
 import SkillEditor from "./components/SkillEditor";
 import RoleplayDetail from "./components/RoleplayDetail";
 import RolePlayBlockDetails from "./components/RolePlayBlockDetails";
+import RecommendPage from "./pages/RecommendPage";
 
 export default function AppAdmin() {
   return (
@@ -59,7 +60,7 @@ export default function AppAdmin() {
           path="notifications"
           element={<GenericResourcePage columns={adminColumns.notifications} config={resourceConfigs.notifications} />}
         />
-
+        <Route path="recommend" element={<RecommendPage />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>

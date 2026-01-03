@@ -62,5 +62,16 @@
     "jobs": "채용",
     "investors": "투자자",
     "terms": "이용약관"
+  },
+  "notifications": {
+    "title": "알림",
+    "empty": "새 알림이 없습니다",
+    "load_more": "더 보기",
+    "type": "유형",
+    "created": "생성일"
+  },
+  "calendar": {
+    "title": "활동 캘린더",
+    "empty": "예정된 이벤트가 없습니다"
   }
 }

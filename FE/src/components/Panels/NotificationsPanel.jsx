@@ -1,10 +1,12 @@
 import { Bell } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next"; 
 import Spinner from "../Spinner";
 import Modal from "../UI/Modal";
 import { useNotifications } from "../../lib/hook/useNotifications";
 
 export default function NotificationsPanel() {
+  const { t } = useTranslation("common");
   const {
     items,
     loading,
@@ -42,13 +44,14 @@ export default function NotificationsPanel() {
             />
           )}
         </div>
+        {/*  t('notifications.title') */}
       </h3>
 
       {loading && <Spinner />}
 
       {!loading && items.length === 0 && (
         <p className="text-sm text-gray-500 mt-2">
-          Không có thông báo mới
+          {t('notifications.empty')}
         </p>
       )}
 
@@ -76,7 +79,7 @@ export default function NotificationsPanel() {
           onClick={() => fetchNotifications(nextPage)}
           className="mt-2 px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600"
         >
-          Xem thêm
+          {t('notifications.load_more')}
         </button>
       )}
 
@@ -92,9 +95,9 @@ export default function NotificationsPanel() {
         </p>
 
         <div className="text-xs text-gray-500 space-y-1">
-          <p>Type: {selected?.type}</p>
+          <p>{t('notifications.type')}: {selected?.type}</p>
           <p>
-            Created:{" "}
+            {t('notifications.created')}:{" "}
             {selected?.created_at &&
               new Date(selected.created_at).toLocaleString()}
           </p>

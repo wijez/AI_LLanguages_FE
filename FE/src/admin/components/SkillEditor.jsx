@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { Edit, Delete, Add } from '@mui/icons-material';
-
+import { QuizForm, FillgapForm, ListeningForm, OrderingForm, MatchingForm } from '../components/forms/SkillForms';
 const TYPE_LABEL = {
   listening: 'Listening',
   speaking: 'Speaking',
@@ -33,122 +33,6 @@ const TYPE_LABEL = {
   pron: 'Pronunciation',
 };
 
-// --- Component Form cho Quiz (để trong Dialog) ---
-function QuizForm({ question: initialData, onSave, onCancel }) {
-  const [text, setText] = React.useState(initialData.question_text || '');
-  const [choices, setChoices] = React.useState(initialData.choices || []);
-
-  const handleSave = () => {
-    onSave({
-      ...initialData,
-      question_text: text,
-      choices: choices,
-    });
-  };
-
-  const setCorrect = (id) => {
-    setChoices(
-      choices.map((c) => ({ ...c, is_correct: c.id === id }))
-    );
-  };
-  
-  const addChoice = () => {
-    setChoices([
-      ...choices,
-      { id: `new_${Date.now()}`, text: '', is_correct: choices.length === 0 }
-    ]);
-  };
-  
-  const updateChoiceText = (id, newText) => {
-    setChoices(
-      choices.map(c => c.id === id ? { ...c, text: newText } : c)
-    );
-  };
-
-  const deleteChoice = (id) => {
-    setChoices(choices.filter(c => c.id !== id));
-  };
-
-  return (
-    <>
-      <DialogTitle>{String(initialData.id).startsWith('new_') ? 'Thêm câu hỏi Quiz' : 'Sửa câu hỏi Quiz'}</DialogTitle>
-      <DialogContent dividers sx={{ display: 'grid', gap: 2 }}>
-        <TextField
-          label="Nội dung câu hỏi"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          multiline
-          rows={3}
-          autoFocus
-        />
-        <Divider>Lựa chọn (Choices)</Divider>
-        {choices.map((choice, index) => (
-          <Stack key={choice.id} direction="row" spacing={1} alignItems="center">
-            <TextField
-              label={`Lựa chọn ${index + 1}`}
-              value={choice.text}
-              onChange={(e) => updateChoiceText(choice.id, e.target.value)}
-              fullWidth
-            />
-            <Chip
-              label={choice.is_correct ? 'Đáp án đúng' : 'Đặt làm đáp án'}
-              color={choice.is_correct ? 'success' : 'default'}
-              onClick={() => setCorrect(choice.id)}
-            />
-            <IconButton color="error" onClick={() => deleteChoice(choice.id)}>
-              <Delete />
-            </IconButton>
-          </Stack>
-        ))}
-        <Button size="small" startIcon={<Add />} onClick={addChoice}>
-          Thêm lựa chọn
-        </Button>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>Hủy</Button>
-        <Button onClick={handleSave} variant="contained">Lưu câu hỏi</Button>
-      </DialogActions>
-    </>
-  );
-}
-
-// --- Component Form cho Fillgap (để trong Dialog) ---
-function FillgapForm({ gap: initialData, onSave, onCancel }) {
-  const [text, setText] = React.useState(initialData.text || '');
-  const [answer, setAnswer] = React.useState(initialData.answer || '');
-
-  const handleSave = () => {
-    onSave({ ...initialData, text, answer });
-  };
-
-  return (
-    <>
-      <DialogTitle>{String(initialData.id).startsWith('new_') ? 'Thêm Fillgap' : 'Sửa Fillgap'}</DialogTitle>
-      <DialogContent dividers sx={{ display: 'grid', gap: 2, pt: 1 }}>
-        <TextField
-          label="Câu (dùng {gap} để đánh dấu)"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          helperText="Ví dụ: Hello, my name {gap} John."
-          autoFocus
-        />
-        <TextField
-          label="Đáp án"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          helperText="Ví dụ: is"
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>Hủy</Button>
-        <Button onClick={handleSave} variant="contained">Lưu</Button>
-      </DialogActions>
-    </>
-  );
-}
-
-
-// ===== COMPONENT CHÍNH (EDITOR) =====
 export default function SkillEditor() {
   const { id } = useParams(); // :id là Skill ID
 
@@ -164,6 +48,13 @@ export default function SkillEditor() {
   // --- State Local cho nội dung ---
   const [localQuizQs, setLocalQuizQs] = React.useState([]);
   const [localFillgaps, setLocalFillgaps] = React.useState([]);
+  const [localOrdering, setLocalOrdering] = React.useState([]);
+  const [localMatching, setLocalMatching] = React.useState([]);
+  const [localListening, setLocalListening] = React.useState([]);
+  const [localSpeaking, setLocalSpeaking] = React.useState([]);
+  const [localReading, setLocalReading] = React.useState([]);
+  const [localWriting, setLocalWriting] = React.useState([]);
+  const [localPronunciation, setLocalPronunciation] = React.useState([]);
 
 
   // --- State cho Dialog ---
@@ -185,6 +76,13 @@ export default function SkillEditor() {
           type: rawSkill.type,
           quiz_questions: rawSkill.quiz_questions || [],
           fillgaps: rawSkill.fillgaps || [],
+          ordering_items: rawSkill.ordering_items || [],
+          matching_pairs: rawSkill.matching_pairs || [],
+          listening_prompts: rawSkill.listening_prompts || [],
+          speaking_prompts: rawSkill.speaking_prompts || [],
+          reading_passage: rawSkill.reading_passage || [],
+          writing_questions: rawSkill.writing_questions || [],
+          pronunciation_prompts: rawSkill.pronunciation_prompts || [],
         };
         
         if (!cancel) {
@@ -192,6 +90,13 @@ export default function SkillEditor() {
           // Tải dữ liệu vào Local State
           setLocalQuizQs(normalized.quiz_questions || []);
           setLocalFillgaps(normalized.fillgaps || []);
+          setLocalOrdering(normalized.ordering_items || []);
+          setLocalMatching(normalized.matching_pairs || []);
+          setLocalListening(normalized.listening_prompts || []);
+          setLocalSpeaking(normalized.speaking_prompts || []);
+          setLocalReading(normalized.reading_passage || []);
+          setLocalWriting(normalized.writing_questions || []);
+          setLocalPronunciation(normalized.pronunciation_prompts || []);
           setIsDirty(false); // Reset
         }
       } catch (e) {
@@ -210,14 +115,21 @@ export default function SkillEditor() {
     setIsSaving(true);
     
     let payload = {};
-    if (skill.type === 'quiz') {
-      payload.quiz_questions = localQuizQs;
-    } else if (skill.type === 'fillgap') {
-      payload.fillgaps = localFillgaps;
+    switch (skill.type) {
+      case 'quiz': payload.quiz_questions = localQuizQs; break;
+      case 'fillgap': payload.fillgaps = localFillgaps; break;
+      case 'ordering': payload.ordering_items = localOrdering; break;
+      case 'matching': payload.matching_pairs = localMatching; break;
+      case 'listening': payload.listening_prompts = localListening; break;
+      case 'reading': payload.reading_passage = localReading; break;
+      case 'writing': payload.writing_questions = localWriting; break;
+      case 'pron': payload.pronunciation_prompts = localPronunciation; break;
+      case 'speaking': payload.listening_prompts = localListening; break;
+      default: break;
     }
     
     try {
-      await api.Skills.upsertQuestions(id, payload);
+      await api.Skills.patchQuestions(id, payload);
       setIsDirty(false);
       setToast({ msg: 'Lưu thay đổi thành công!', type: 'success' });
     } catch (e) {
@@ -235,6 +147,12 @@ export default function SkillEditor() {
       initialData = data || { id: `new_${Date.now()}`, question_text: '', choices: [] };
     } else if (type === 'fillgap') {
       initialData = data || { id: `new_${Date.now()}`, text: '', answer: '' };
+    } else if (type === 'matching') {
+      initialData = data || { id: `new_${Date.now()}`, left_text: '', right_text: '' };
+    } else if (type === 'ordering') {
+      initialData = data || { id: `new_${Date.now()}`, text: '', order_index: localOrdering.length };
+    } else if (type === 'listening') {
+      initialData = data || { id: `new_${Date.now()}`, audio_url: '', question_text: '' };
     }
     setDialogState({ open: true, type, data: initialData });
   };
@@ -248,19 +166,20 @@ export default function SkillEditor() {
     const { type } = dialogState;
     const isNew = String(savedData.id).startsWith('new_');
     
-    if (type === 'quiz') {
-      if (isNew) {
-        setLocalQuizQs(prev => [...prev, savedData]);
-      } else {
-        setLocalQuizQs(prev => prev.map(q => q.id === savedData.id ? savedData : q));
-      }
-    } else if (type === 'fillgap') {
-      if (isNew) {
-        setLocalFillgaps(prev => [...prev, savedData]);
-      } else {
-        setLocalFillgaps(prev => prev.map(g => g.id === savedData.id ? savedData : g));
-      }
-    }
+    const updateList = (prev) => isNew 
+    ? [...prev, savedData] 
+    : prev.map(item => item.id === savedData.id ? savedData : item);
+
+  switch (type) {
+    case 'quiz': setLocalQuizQs(updateList); break;
+    case 'fillgap': setLocalFillgaps(updateList); break;
+    case 'ordering': setLocalOrdering(updateList); break;
+    case 'matching': setLocalMatching(updateList); break;
+    case 'listening': setLocalListening(updateList); break;
+    case 'speaking': setLocalListening(updateList); break; 
+    case 'pron': setLocalPronunciation(updateList); break;
+  }
+    
     setIsDirty(true);
     handleCloseDialog();
   };
@@ -374,10 +293,110 @@ export default function SkillEditor() {
     </Box>
   );
 
-  // (Bạn có thể thêm các hàm render editor khác ở đây)
+  // --- Render Ordering (Sắp xếp thứ tự) ---
+  const renderOrdering = (items) => (
+    <Box sx={{ display: 'grid', gap: 1.5 }}>
+      <Button 
+        variant="contained" startIcon={<Add />}
+        onClick={() => handleOpenDialog('ordering')}
+        sx={{ maxWidth: 200 }}
+      >
+        Thêm mục sắp xếp
+      </Button>
+      <DataGrid
+        density="compact"
+        rows={items}
+        getRowId={(r) => r.id}
+        columns={[
+          { field: 'order_index', headerName: 'Thứ tự', width: 100 },
+          { field: 'text', headerName: 'Nội dung hiển thị', flex: 1, minWidth: 300 },
+          {
+            field: 'actions', headerName: 'Actions', width: 120, sortable: false,
+            renderCell: ({ row }) => (
+              <Stack direction="row">
+                <IconButton size="small" onClick={() => handleOpenDialog('ordering', row)}><Edit /></IconButton>
+                <IconButton size="small" color="error" onClick={() => handleDeleteItem('ordering', row.id)}><Delete /></IconButton>
+              </Stack>
+            )
+          }
+        ]}
+        autoHeight
+      />
+    </Box>
+  );
 
+  // --- Render Matching (Ghép cặp) ---
+  const renderMatching = (pairs) => (
+    <Box sx={{ display: 'grid', gap: 1.5 }}>
+      <Button 
+        variant="contained" startIcon={<Add />}
+        onClick={() => handleOpenDialog('matching')}
+        sx={{ maxWidth: 200 }}
+      >
+        Thêm cặp ghép nối
+      </Button>
+      <DataGrid
+        density="compact"
+        rows={pairs}
+        getRowId={(r) => r.id}
+        columns={[
+          { field: 'left_text', headerName: 'Vế trái (Câu hỏi)', flex: 1, minWidth: 250 },
+          { field: 'right_text', headerName: 'Vế phải (Đáp án)', flex: 1, minWidth: 250 },
+          {
+            field: 'actions', headerName: 'Actions', width: 120, sortable: false,
+            renderCell: ({ row }) => (
+              <Stack direction="row">
+                <IconButton size="small" onClick={() => handleOpenDialog('matching', row)}><Edit /></IconButton>
+                <IconButton size="small" color="error" onClick={() => handleDeleteItem('matching', row.id)}><Delete /></IconButton>
+              </Stack>
+            )
+          }
+        ]}
+        autoHeight
+      />
+    </Box>
+  );
 
-  // ========== UI ==========
+  // --- Render Listening / Speaking ---
+  const renderListening = (prompts) => (
+    <Box sx={{ display: 'grid', gap: 1.5 }}>
+      <Button 
+        variant="contained" startIcon={<Add />}
+        onClick={() => handleOpenDialog('listening')}
+        sx={{ maxWidth: 200 }}
+      >
+        Thêm Audio Prompt
+      </Button>
+      <DataGrid
+        density="compact"
+        rows={prompts}
+        getRowId={(r) => r.id}
+        columns={[
+          { field: 'question_text', headerName: 'Câu hỏi / Text hiển thị', flex: 1, minWidth: 250 },
+          { 
+            field: 'audio_url', 
+            headerName: 'Audio File', 
+            flex: 1, 
+            renderCell: ({ value }) => (
+              <Typography variant="caption" sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer' }}>
+                {value ? value.split('/').pop() : 'No audio'}
+              </Typography>
+            )
+          },
+          {
+            field: 'actions', headerName: 'Actions', width: 120, sortable: false,
+            renderCell: ({ row }) => (
+              <Stack direction="row">
+                <IconButton size="small" onClick={() => handleOpenDialog('listening', row)}><Edit /></IconButton>
+                <IconButton size="small" color="error" onClick={() => handleDeleteItem('listening', row.id)}><Delete /></IconButton>
+              </Stack>
+            )
+          }
+        ]}
+        autoHeight
+      />
+    </Box>
+  );
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
       {/* Header */}
@@ -435,10 +454,13 @@ export default function SkillEditor() {
           <Box sx={{ display: 'grid', gap: 1.5 }}>
             {skill.type === 'quiz' && renderQuiz(localQuizQs)}
             {skill.type === 'fillgap' && renderFillgap(localFillgaps)}
+            {skill.type === 'ordering' && renderOrdering(localOrdering)}
+            {skill.type === 'matching' && renderMatching(localMatching)}
+            {(skill.type === 'listening' || skill.type === 'speaking') && renderListening(localListening)}
             
             {/* Fallback cho các loại chưa có editor */}
             {[
-              'quiz','fillgap'
+              'quiz','fillgap', 'ordering', 'matching', 'listening', 'speaking'
             ].indexOf(skill.type) < 0 && (
               <Typography color="text.secondary">
                 Editor cho loại '{skill.type}' chưa được implement.
@@ -450,20 +472,11 @@ export default function SkillEditor() {
       
       {/* DIALOG CHUNG */}
       <Dialog open={dialogState.open} onClose={handleCloseDialog} fullWidth maxWidth="md">
-        {dialogState.type === 'quiz' && (
-          <QuizForm 
-            question={dialogState.data}
-            onSave={handleSaveFromDialog}
-            onCancel={handleCloseDialog}
-          />
-        )}
-        {dialogState.type === 'fillgap' && (
-          <FillgapForm
-            gap={dialogState.data}
-            onSave={handleSaveFromDialog}
-            onCancel={handleCloseDialog}
-          />
-        )}
+          {dialogState.type === 'quiz' && <QuizForm question={dialogState.data} onSave={handleSaveFromDialog} onCancel={handleCloseDialog} />}
+          {dialogState.type === 'fillgap' && <FillgapForm gap={dialogState.data} onSave={handleSaveFromDialog} onCancel={handleCloseDialog} />}
+          {dialogState.type === 'ordering' && <OrderingForm item={dialogState.data} onSave={handleSaveFromDialog} onCancel={handleCloseDialog} />}
+          {dialogState.type === 'matching' && <MatchingForm pair={dialogState.data} onSave={handleSaveFromDialog} onCancel={handleCloseDialog} />}
+          {dialogState.type === 'listening' && <ListeningForm prompt={dialogState.data} onSave={handleSaveFromDialog} onCancel={handleCloseDialog} />}
       </Dialog>
       
       {/* SNACKBAR */}

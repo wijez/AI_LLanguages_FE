@@ -752,6 +752,7 @@ Resources.Skills = {
   ...Resources.Skills,
   questions: (id, params, opts) => client.get(`/skills/${id}/questions/`, { params }, opts),
   upsertQuestions: (id, payload, cfg) => client.post(`/skills/${id}/upsert-questions/`, payload, cfg).finally(invalidateAllCache),
+  patchQuestions: (id, payload, cfg) => client.patch(`/skills/${id}/upsert-questions/`, payload, cfg).finally(invalidateAllCache),
   lessons: (id, params, opts) => client.get(`/skills/${id}/lessons/`, { params }, opts),
   byLesson: async ({ lesson, ...params } = {}, opts) => {
     try {
@@ -839,6 +840,7 @@ const SkillSessions = {
     cancel: (id, payload, cfg) => client.post(`/skill_sessions/${id}/cancel/`, payload || {}, cfg),
     attempts: (id, params, opts) => client.get(`/skill_sessions/${id}/attempts/`, { params }, opts),
     saveAttempt: (id, payload, cfg) => client.post(`/skill_sessions/${id}/save_attempt/`, payload, cfg),
+    submit: (payload, cfg) => client.post("/skill-session/submit/", payload, cfg),
 };
 
 // Speech & Pron

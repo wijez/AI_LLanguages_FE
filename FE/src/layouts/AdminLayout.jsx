@@ -28,6 +28,7 @@ import SpellcheckRounded from "@mui/icons-material/SpellcheckRounded";
 import ChatRounded from "@mui/icons-material/ChatRounded";
 import NotificationsRounded from "@mui/icons-material/NotificationsRounded";
 import AdminDropdown from "../components/Dropdowns/AdminDropdown"
+import { Air, Airlines } from "@mui/icons-material";
 
 const drawerWidth = 240;
 
@@ -94,6 +95,12 @@ export default function AdminLayout() {
             <NotificationsRounded />
             <ListItemText sx={{ ml: 1 }} primary="Notifications" />
           </ListItemButton>
+        </Link>
+        <Link to="/admin/recommend">
+        <ListItemButton>
+            <Airlines />
+        <ListItemText sx={{ ml: 1 }} primary="Recommend" />
+        </ListItemButton>
         </Link>
       </List>
     </>
